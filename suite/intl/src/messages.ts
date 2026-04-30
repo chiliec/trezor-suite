@@ -2153,6 +2153,26 @@ export const messages = defineMessages({
         defaultMessage: 'Unable to verify address history. Check that the address is correct.',
         id: 'TR_ADDRESS_CANT_VERIFY_HISTORY',
     },
+    TR_ENS_RESOLVING: {
+        defaultMessage: 'Resolving name…',
+        id: 'TR_ENS_RESOLVING',
+    },
+    TR_ENS_RESOLVED_TO: {
+        defaultMessage: 'Resolved to {address}',
+        id: 'TR_ENS_RESOLVED_TO',
+    },
+    TR_ENS_RESOLVE_FAILED: {
+        defaultMessage: 'Could not resolve name. Check that the name is correct.',
+        id: 'TR_ENS_RESOLVE_FAILED',
+    },
+    TR_SEND_ADDRESS_CONFIRMATION_ENS_NOTE: {
+        defaultMessage: 'Sending to {ensName}',
+        id: 'TR_SEND_ADDRESS_CONFIRMATION_ENS_NOTE',
+    },
+    TR_SEND_ADDRESS_CONFIRMATION_ENS_RESOLVED_TO: {
+        defaultMessage: 'Resolves to {address}',
+        id: 'TR_SEND_ADDRESS_CONFIRMATION_ENS_RESOLVED_TO',
+    },
     TR_EVM_ADDRESS_IS_CONTRACT: {
         defaultMessage: "You're sending funds to a contract address.",
         id: 'TR_EVM_ADDRESS_IS_CONTRACT',
@@ -6234,6 +6254,10 @@ export const messages = defineMessages({
     RECIPIENT_ADDRESS: {
         defaultMessage: 'Address',
         id: 'RECIPIENT_ADDRESS',
+    },
+    RECIPIENT_ADDRESS_OR_ENS: {
+        defaultMessage: 'Address / ENS',
+        id: 'RECIPIENT_ADDRESS_OR_ENS',
     },
     RECIPIENT_ADD: {
         id: 'RECIPIENT_ADD',

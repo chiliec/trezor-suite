@@ -7,6 +7,7 @@
         { "path": "../bip329-types" },
         { "path": "../networks" },
         { "path": "../platform-encryption" },
+        { "path": "../react-query" },
         { "path": "../redux-utils" },
         { "path": "../suite-sync-types" },
         { "path": "../suite-types" },
