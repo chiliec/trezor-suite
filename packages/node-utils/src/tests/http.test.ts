@@ -622,14 +622,16 @@ describe('HttpServer', () => {
 
         const blocker = new HttpServer<Events>({ logger: muteLogger, port: freePort1 });
         await blocker.start();
+        let deadlineTimer: ReturnType<typeof setTimeout> | undefined;
         try {
             const deadline = new Promise<'timeout'>(resolve => {
-                setTimeout(() => resolve('timeout'), 5000);
+                deadlineTimer = setTimeout(() => resolve('timeout'), 5000);
             });
             const result = await Promise.race([server.start(), deadline]);
             expect(result).not.toEqual('timeout');
             expect(server.getServerAddress()).toMatchObject({ port: freePort2 });
         } finally {
+            clearTimeout(deadlineTimer);
             await blocker.stop();
         }
     });
