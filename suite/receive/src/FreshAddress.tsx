@@ -1,11 +1,12 @@
 import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 
+import { type SelectAccountLabelState, selectAccountLabel } from '@suite/account';
 import { Address, selectAddressLabel, selectLabeledUnusedAddresses } from '@suite/address';
 import type { SelectAddressLabelState, SelectLabeledUnusedAddressesState } from '@suite/address';
 import { ReadMoreLink } from '@suite/external-links';
 import { Translation, useTranslation } from '@suite/intl';
-import { Labeling } from '@suite/labeling';
+import { Labeling, processLegacyMetadataIntoSuiteSyncThunk } from '@suite/labeling';
 import { getFirstFreshAddress } from '@suite-common/address';
 import {
     type ReceiveRootState,
@@ -13,7 +14,7 @@ import {
     selectCurrentFreshAddress,
     selectTouchedAddresses,
 } from '@suite-common/receive';
-import { getNetwork } from '@suite-common/wallet-config';
+import { getNetwork, isAccountBasedNetwork } from '@suite-common/wallet-config';
 import { type AccountsRootState, selectIsAccountUtxoBased } from '@suite-common/wallet-core';
 import { type Account } from '@suite-common/wallet-types';
 import {
@@ -28,6 +29,7 @@ import {
     Tooltip,
 } from '@trezor/components';
 
+import { getReceiveAddressLabelPayload } from './getReceiveAddressLabelPayload';
 import { showAddressThunk } from './showAddressThunk';
 import { useReceiveDisabled } from './useReceiveDisabled';
 
@@ -153,6 +155,56 @@ export const FreshAddress = ({
             : undefined,
     );
 
+    const isAccountBasedAccount = isAccountBasedNetwork(account.symbol);
+
+    const accountLabel = useSelector((state: SelectAccountLabelState) =>
+        selectAccountLabel(state, {
+            accountDescriptor: account.descriptor,
+            accountKey: account.key,
+            deviceStaticId: account.deviceState,
+            networkSymbol: account.symbol,
+        }),
+    );
+
+    // accounts on account based networks have a single receive address, its label and the account label are unified;
+    // adopt a previously set address label as the account label and clear it from storage
+    useEffect(() => {
+        if (!isAccountBasedAccount || !currentFreshAddress?.address || !currentFreshAddressLabel) {
+            return;
+        }
+
+        if (!accountLabel) {
+            dispatch(
+                processLegacyMetadataIntoSuiteSyncThunk({
+                    payload: getReceiveAddressLabelPayload(account, currentFreshAddress.address),
+                    deviceStaticSessionId: account.deviceState,
+                    value: currentFreshAddressLabel,
+                }),
+            );
+        }
+
+        dispatch(
+            processLegacyMetadataIntoSuiteSyncThunk({
+                payload: {
+                    type: 'addressLabel',
+                    entityKey: account.key,
+                    defaultValue: currentFreshAddress.address,
+                    networkSymbol: account.symbol,
+                    accountDescriptor: account.descriptor,
+                },
+                deviceStaticSessionId: account.deviceState,
+                value: undefined,
+            }),
+        );
+    }, [
+        isAccountBasedAccount,
+        currentFreshAddress?.address,
+        currentFreshAddressLabel,
+        accountLabel,
+        account,
+        dispatch,
+    ]);
+
     // On coinjoin account, disallow to reveal more than the first receive address until it is used,
     // because discovery of coinjoin account relies on assumption that user uses his first address first.
     const coinjoinDisallowReveal =
@@ -215,21 +267,25 @@ export const FreshAddress = ({
                     <Text typographyStyle="headline-md">
                         {currentFreshAddress?.address ? (
                             <Labeling
-                                payload={{
-                                    type: 'addressLabel',
-                                    entityKey: account.key,
-                                    defaultValue: currentFreshAddress?.address,
-                                    networkSymbol: account.symbol,
-                                    accountDescriptor: account.descriptor,
-                                }}
+                                payload={getReceiveAddressLabelPayload(
+                                    account,
+                                    currentFreshAddress.address,
+                                )}
+                                {...(isAccountBasedAccount && {
+                                    'data-testid': `@metadata/receiveAccountLabel/${account.path}/hover-container`,
+                                })}
                                 deviceStaticSessionId={account.deviceState}
                                 displayValue={
                                     <Address value={currentFreshAddress.address} isTruncated />
                                 }
-                                placeholder={translationString('TR_LABELING_ADDRESS_LABEL')}
+                                placeholder={translationString(
+                                    isAccountBasedAccount
+                                        ? 'TR_LABELING_ACCOUNT_LABEL'
+                                        : 'TR_LABELING_ADDRESS_LABEL',
+                                )}
                                 minHeight={28}
                             >
-                                {currentFreshAddressLabel}
+                                {isAccountBasedAccount ? accountLabel : currentFreshAddressLabel}
                             </Labeling>
                         ) : (
                             <Translation id="RECEIVE_ADDRESS_UNAVAILABLE" />
