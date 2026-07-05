@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Controller } from 'react-hook-form';
 import { useDispatch, useSelector } from 'react-redux';
 
@@ -56,6 +56,7 @@ export const BaseCurrencyInput = ({
         account,
         network,
         formState: { errors },
+        getCurrentFiatRate,
         getDefaultValue,
         handleFiatChange,
         control,
@@ -90,6 +91,49 @@ export const BaseCurrencyInput = ({
         code: baseCurrencyCode,
         isInSats: areSatsDisplayed,
     });
+
+    const currentRateValue =
+        baseCurrencyCode === ''
+            ? undefined
+            : getCurrentFiatRate({
+                  currencyCode: baseCurrencyCode,
+                  tokenAddress: (token?.contract ?? '') as TokenAddress,
+              })?.rate;
+
+    // keep the fiat value in sync with the live rate used by fee and total rows
+    useEffect(() => {
+        const cryptoValue = new BigNumber(cryptoAmountValue);
+
+        if (!currentRateValue || cryptoValue.isNaN() || baseCurrencyCode === '') return;
+        if (document.activeElement?.getAttribute('name') === baseCurrencyInputName) return;
+
+        const formattedAmount = parseCryptoToFormattedBaseCurrency({
+            areSatsDisplayed,
+            symbol: network.symbol,
+            rate: currentRateValue,
+            value: cryptoValue,
+            baseCurrencyCode,
+            baseCurrencyToSats: shouldSendInSats === true,
+        });
+
+        const currentFiatValue = new BigNumber(getDefaultValue(baseCurrencyInputName, ''));
+        if (
+            formattedAmount &&
+            (currentFiatValue.isNaN() || !currentFiatValue.eq(formattedAmount))
+        ) {
+            setValue(baseCurrencyInputName, formattedAmount, { shouldValidate: true });
+        }
+    }, [
+        currentRateValue,
+        cryptoAmountValue,
+        baseCurrencyCode,
+        baseCurrencyInputName,
+        areSatsDisplayed,
+        network.symbol,
+        shouldSendInSats,
+        getDefaultValue,
+        setValue,
+    ]);
 
     const recalculate = (rate: number) => {
         const cryptoValue = new BigNumber(cryptoAmountValue);
