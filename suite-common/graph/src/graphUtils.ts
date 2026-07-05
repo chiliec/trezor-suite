@@ -8,6 +8,7 @@ import {
     subHours,
 } from 'date-fns';
 
+import { type TimestampedRates } from '@suite-common/wallet-types';
 import {
     AMOUNT_UNIT_ZERO,
     asAmountUnit,
@@ -67,6 +68,13 @@ export const getTimestampsInTimeFrame = (
 
     return datesInRangeUnixTime as number[];
 };
+
+// Blockbook drops tickers it has no rate for, which shifts the response array out of sync with
+// the requested timestamps. Each ticker carries its own authoritative `ts`, so we rely on that
+// instead of the request index, and sort the result chronologically since dropped tickers can
+// also leave it out of order.
+export const mapTickersToFiatRatesItems = (tickers: TimestampedRates[]): FiatRatesItem[] =>
+    tickers.map(({ ts, rates }) => ({ time: ts, rates })).sort((a, b) => a.time - b.time);
 
 type MapCryptoBalanceMovementToFixedTimeFrameParams = {
     balanceHistory: AccountHistoryBalancePoint[];

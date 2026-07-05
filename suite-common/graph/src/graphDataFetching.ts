@@ -23,6 +23,7 @@ import {
     findOldestBalanceMovementTimestamp,
     getTimestampsInTimeFrame,
     mapCryptoBalanceMovementToFixedTimeFrame,
+    mapTickersToFiatRatesItems,
     mergeMultipleFiatBalanceHistories,
 } from './graphUtils';
 import type {
@@ -319,12 +320,7 @@ const getFiatRatesForNetworkInTimeFrame = async ({
     );
     if (G.isNullable(fiatRates)) return null;
 
-    const formattedFiatRates: FiatRatesItem[] = fiatRates.tickers.flatMap((ticker, index) => {
-        const time = timestamps[index];
-        if (time === undefined) return [];
-
-        return [{ time, rates: ticker.rates }];
-    });
+    const formattedFiatRates = mapTickersToFiatRatesItems(fiatRates.tickers);
 
     fiatRatesCache[cacheKey] = formattedFiatRates;
 

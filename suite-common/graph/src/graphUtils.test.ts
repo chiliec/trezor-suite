@@ -1,9 +1,12 @@
 import { fromUnixTime } from 'date-fns';
 
+import { type TimestampedRates } from '@suite-common/wallet-types';
+
 import {
     findOldestBalanceMovementTimestamp,
     getDataStepInMinutes,
     mapCryptoBalanceMovementToFixedTimeFrame,
+    mapTickersToFiatRatesItems,
     mergeMultipleFiatBalanceHistories,
 } from './graphUtils';
 import type {
@@ -12,6 +15,54 @@ import type {
     FiatGraphPointWithCryptoBalance,
     FiatRatesItem,
 } from './types';
+
+describe(mapTickersToFiatRatesItems.name, () => {
+    it('attaches each rate to its own ticker timestamp, ordered chronologically, when the tickers array is sparse and out of order', () => {
+        // Blockbook drops tickers it has no rate for (compacting the array) and does not
+        // guarantee response order matches the requested timestamps.
+        const tickers: TimestampedRates[] = [
+            { ts: 15, rates: { usd: 3 } },
+            { ts: 0, rates: { usd: 1 } },
+            { ts: 20, rates: { usd: 4 } },
+            { ts: 10, rates: { usd: 2 } },
+        ];
+
+        expect(mapTickersToFiatRatesItems(tickers)).toStrictEqual([
+            { time: 0, rates: { usd: 1 } },
+            { time: 10, rates: { usd: 2 } },
+            { time: 15, rates: { usd: 3 } },
+            { time: 20, rates: { usd: 4 } },
+        ] as FiatRatesItem[]);
+    });
+
+    it('produces rates that yield varying graph values for a flat crypto balance (regression for issue #17671)', () => {
+        // Requested timestamps were [0, 5, 10, 15, 20], but the ticker for 5 was dropped.
+        // Mapping tickers positionally onto the requested timestamps would shift every
+        // following rate to an earlier, incorrect date and drop the most recent timestamp (20)
+        // entirely, making token graphs appear flat.
+        const tickers: TimestampedRates[] = [
+            { ts: 15, rates: { usd: 3 } },
+            { ts: 0, rates: { usd: 1 } },
+            { ts: 20, rates: { usd: 4 } },
+            { ts: 10, rates: { usd: 2 } },
+        ];
+        const balanceHistory: AccountHistoryBalancePoint[] = [{ time: 100, cryptoBalance: '100' }];
+
+        const fiatRates = mapTickersToFiatRatesItems(tickers);
+        const result = mapCryptoBalanceMovementToFixedTimeFrame({
+            balanceHistory,
+            fiatRates,
+            baseCurrencyCode: 'usd',
+        });
+
+        expect(result).toStrictEqual([
+            { date: fromUnixTime(0), cryptoBalance: '100', value: 100 },
+            { date: fromUnixTime(10), cryptoBalance: '100', value: 200 },
+            { date: fromUnixTime(15), cryptoBalance: '100', value: 300 },
+            { date: fromUnixTime(20), cryptoBalance: '100', value: 400 },
+        ] as FiatGraphPointWithCryptoBalance[]);
+    });
+});
 
 describe(getDataStepInMinutes.name, () => {
     it('gets the 1m step size for 1 hour interval (60 points)', () => {
