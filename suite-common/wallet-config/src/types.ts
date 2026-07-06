@@ -20,7 +20,7 @@ export type NetworkType =
     | 'tron';
 
 type UtilityAccountType = 'normal' | 'imported' | 'placeholder'; // reserved accountTypes to stand in for a real accountType
-type RealAccountType = 'legacy' | 'segwit' | 'coinjoin' | 'taproot' | 'ledger';
+type RealAccountType = 'legacy' | 'segwit' | 'coinjoin' | 'taproot' | 'ledger' | 'root';
 export type AccountType = UtilityAccountType | RealAccountType;
 
 export const TREZOR_CONNECT_BACKENDS = [
@@ -66,10 +66,12 @@ type MaybeApostrophe = `'` | '';
 type MaybeLevel = `/${number}${MaybeApostrophe}` | '';
 type LevelOrIndex = `/${number | 'i'}'`;
 type MaybeLevelOrIndex = `/${number | 'i'}${MaybeApostrophe}` | '';
-// template with i in place of account index, which shall be substituted with a number
+// template with i in place of account index, which shall be substituted with a number;
+// templates without i (root paths) describe account types with a single account only
 export type Bip43PathTemplate =
-    `m${Level}${Level}${LevelOrIndex}${MaybeLevelOrIndex}${MaybeLevelOrIndex}`;
-export type Bip43Path = `m${Level}${Level}${Level}${MaybeLevel}${MaybeLevel}`;
+    | `m${Level}${Level}`
+    | `m${Level}${Level}${LevelOrIndex}${MaybeLevelOrIndex}${MaybeLevelOrIndex}`;
+export type Bip43Path = `m${Level}${Level}` | `m${Level}${Level}${Level}${MaybeLevel}${MaybeLevel}`;
 
 export type Explorer = {
     base: string;

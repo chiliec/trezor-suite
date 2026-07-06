@@ -21,6 +21,7 @@ export const formattedAccountTypeMap: AccountTypeMap = {
     },
     solana: {
         ledger: 'Ledger',
+        root: 'Root',
     },
 };
 
