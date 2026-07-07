@@ -6,13 +6,14 @@ import {
     isYieldTxReviewForFlow,
     selectAddressDisplayType,
     selectDeepCopyOfFormDraft,
+    selectIsMevProtectionEnabled,
     selectStablecoinYieldSession,
     selectStablecoinYieldTxReview,
     stablecoinYieldActions,
     synchronizeSentTransactionThunk,
 } from '@suite-common/wallet-core';
 import { type Account, AddressDisplayOptions, type FormState } from '@suite-common/wallet-types';
-import { getAccountIdentity } from '@suite-common/wallet-utils';
+import { getAccountIdentity, getMevProtectedTxData } from '@suite-common/wallet-utils';
 import { type UpdateSelectedFeeLevelThunkParams } from '@suite-native/transaction-management';
 import TrezorConnect from '@trezor/connect';
 
@@ -212,8 +213,9 @@ export const pushYieldClaimReviewThunk = createThunk<
             });
         }
 
+        const isMevProtectionEnabled = selectIsMevProtectionEnabled(getState());
         const pushResponse = await TrezorConnect.pushTransaction({
-            tx: serializedTx.tx,
+            tx: getMevProtectedTxData(serializedTx.symbol, serializedTx.tx, isMevProtectionEnabled),
             coin: serializedTx.symbol,
             identity: getAccountIdentity(account),
         });
