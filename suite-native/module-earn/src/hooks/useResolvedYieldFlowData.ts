@@ -228,7 +228,8 @@ export const useResolvedYieldFlowData = ({
     displayError = true,
     yieldId,
 }: YieldFlowProps) => {
-    const { data: yieldOpportunities } = useAllYieldOpportunities();
+    const { data: yieldOpportunities, isLoading: isLoadingYieldOpportunities } =
+        useAllYieldOpportunities();
     const account = useSelector((state: AccountsRootState) =>
         selectAccountByKey(state, accountKey),
     );
@@ -255,6 +256,7 @@ export const useResolvedYieldFlowData = ({
     useEffect(() => {
         if (
             !displayError ||
+            isLoadingYieldOpportunities ||
             resolvedFlowData.resolutionStatus === 'resolved' ||
             hasDisplayedAlertRef.current
         ) {
@@ -270,7 +272,14 @@ export const useResolvedYieldFlowData = ({
             primaryButtonTitle: translate('generic.buttons.close'),
             onPressPrimaryButton: handleGoBack,
         });
-    }, [displayError, handleGoBack, resolvedFlowData.resolutionStatus, showAlert, translate]);
+    }, [
+        displayError,
+        handleGoBack,
+        isLoadingYieldOpportunities,
+        resolvedFlowData.resolutionStatus,
+        showAlert,
+        translate,
+    ]);
 
     return resolvedFlowData;
 };
