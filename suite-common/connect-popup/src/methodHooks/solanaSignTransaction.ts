@@ -10,6 +10,7 @@ import type { CallMethodKeys, SolanaSignTransaction } from '@trezor/connect';
 import { getSerializedPath, validatePath } from '@trezor/connect/src/utils/pathUtils';
 
 import { connectPopupActions } from '../connectPopupActions';
+import { connectPopupErrorSummary } from '../connectPopupErrorSummary';
 import { type PostCallHookParams, type PreCallHookParams } from './types';
 import { createPlaceholderAccount } from './utils';
 
@@ -66,7 +67,10 @@ const preCallHook = async <M extends CallMethodKeys>({
         }
     } catch (error) {
         // If an error occurs it's not a problem, we just fall back to generic UI
-        console.error(`Error in Connect Popup ${method} hook:`, error);
+        console.error(
+            `Error in Connect Popup ${method} hook:`,
+            connectPopupErrorSummary(method, error),
+        );
     }
 };
 

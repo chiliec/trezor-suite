@@ -32,6 +32,7 @@ import { DEEPLINK_VERSION } from '@trezor/connect-common/src/data/version';
 import { resolveAfter } from '@trezor/utils';
 
 import { connectPopupActions } from './connectPopupActions';
+import { connectPopupErrorSummary } from './connectPopupErrorSummary';
 import { getPermissionDeferred, getPopupCallDeferred } from './connectPopupPromiseManager';
 import { selectConnectAppPermissions, selectConnectPopupCall } from './connectPopupReducer';
 import {
@@ -211,7 +212,7 @@ export const connectPopupCallThunkInner = createThunk<
 
             getPopupCallDeferred().resolve(response);
         } catch (error) {
-            console.error('connectPopupCallThunk', error);
+            console.error('connectPopupCallThunk', connectPopupErrorSummary(method, error));
             if (error?.error === 'switching-device') {
                 // Do nothing, call will be restarted after device switch
                 return;
@@ -390,7 +391,10 @@ export const connectPopupVerifyAddressThunk = createThunk<void, { index: number 
                 }),
             );
         } catch (error) {
-            console.error('connectPopupVerifyAddressThunk', error);
+            console.error(
+                'connectPopupVerifyAddressThunk',
+                connectPopupErrorSummary(call.method, error),
+            );
             dispatch(
                 connectPopupActions.confirmAddresses({
                     exported: call.exported,
@@ -822,7 +826,10 @@ export const connectPopupVerifySelectAccountThunk = createThunk<
                     derivationType: getDerivationType(accountType),
                 });
                 if (!res.success) {
-                    console.error('connectPopupVerifySelectAccountThunk (xpub)', res.error);
+                    console.error(
+                        'connectPopupVerifySelectAccountThunk (xpub)',
+                        connectPopupErrorSummary(call.method, res.error),
+                    );
                 }
                 patchCandidate({ verifying: false, validated: res.success ? 'valid' : 'failed' });
 
@@ -858,7 +865,10 @@ export const connectPopupVerifySelectAccountThunk = createThunk<
             });
 
             if (!res.success) {
-                console.error('connectPopupVerifySelectAccountThunk', res.error);
+                console.error(
+                    'connectPopupVerifySelectAccountThunk',
+                    connectPopupErrorSummary(call.method, res.error),
+                );
             }
             patchCandidate({
                 verifying: false,
@@ -866,7 +876,10 @@ export const connectPopupVerifySelectAccountThunk = createThunk<
                 mac: res.success ? res.payload.mac : undefined,
             });
         } catch (error) {
-            console.error('connectPopupVerifySelectAccountThunk', error);
+            console.error(
+                'connectPopupVerifySelectAccountThunk',
+                connectPopupErrorSummary(call.method, error),
+            );
             patchCandidate({ verifying: false, validated: 'failed' });
         }
     },
