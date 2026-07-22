@@ -20,6 +20,7 @@ import { GuidePanel } from './pageObjects/guidePanel';
 import { MetadataPage } from './pageObjects/metadata/metadataPage';
 import { OnboardingPage } from './pageObjects/onboarding/onboardingPage';
 import { PaginationControl } from './pageObjects/pagination';
+import { PromoBanner } from './pageObjects/promoBanner';
 import { RecoveryModal } from './pageObjects/recoveryModal';
 import { SettingsPage } from './pageObjects/settings/settingsPage';
 import { StakingSection } from './pageObjects/staking/stakingSection';
@@ -71,6 +72,7 @@ type Fixtures = {
     paginationControl: PaginationControl;
     toastSection: ToastSection;
     evoluClient: EvoluClient;
+    promoBanner: PromoBanner;
 };
 
 const test = suiteBaseTest.extend<Fixtures>({
@@ -189,6 +191,9 @@ const test = suiteBaseTest.extend<Fixtures>({
         const evoluClient = new EvoluClient();
         await use(evoluClient);
         await evoluClient.dispose();
+    },
+    promoBanner: async ({ page }, use) => {
+        await use(new PromoBanner(page));
     },
 });
 
