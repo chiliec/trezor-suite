@@ -1,5 +1,6 @@
 /* eslint-disable react-hooks/rules-of-hooks */
 import { checkEvoluRelayServerRunning } from '@suite-common/e2e-evolu-client';
+import { BlockbookProxyMock } from '@trezor/e2e-utils';
 
 import { AnalyticsFixture, AnalyticsHelper } from './analytics';
 import { EvoluClient } from './helpers/evoluClient';
@@ -49,6 +50,7 @@ type Fixtures = {
     tradingStore: TradingStoreFixture;
     metadataMock: MetadataMock;
     blockbookMock: BlockbookMock;
+    bitcoinBackendProxy: BlockbookProxyMock;
     solanaStakingMock: SolanaStakingMock;
     tradingMock: TradingMock;
     passthruTradingMock: PassthruTradingMock;
@@ -120,6 +122,12 @@ const test = suiteBaseTest.extend<Fixtures>({
         const blockbookMock = new BlockbookMock();
         await use(blockbookMock);
         blockbookMock.stop();
+    },
+    bitcoinBackendProxy: async ({}, use) => {
+        const bitcoinBackendProxy = new BlockbookProxyMock('wss://btc1.trezor.io/websocket');
+        await bitcoinBackendProxy.start();
+        await use(bitcoinBackendProxy);
+        await bitcoinBackendProxy.stop();
     },
     solanaStakingMock: async ({ target }, use) => {
         const solanaStakingMock = new SolanaStakingMock(target);

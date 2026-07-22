@@ -120,4 +120,58 @@ test.describe('Coin Settings', { tag: ['@T3W1', '@T3T1'] }, () => {
             },
         );
     }
+
+    test(
+        'Set a custom BTC backend before enabling the network',
+        {
+            annotation: createTestAnnotation({
+                testCase:
+                    'Verifies that a custom Bitcoin blockbook backend can be configured while the network is still disabled, that no communication reaches the backend until the network is enabled, and that discovery then talks to that backend.',
+                category: TestCategory.Settings,
+                priority: TestPriority.Medium,
+                stream: TestStream.Foundation,
+            }),
+        },
+        async ({ page, settingsPage, walletPage, bitcoinBackendProxy }) => {
+            const backendType: BackendType = 'blockbook';
+
+            await test.step('BTC starts disabled', async () => {
+                await settingsPage.coinsTab.expectNetworkDisabled('btc');
+            });
+
+            await test.step('Set a custom backend without enabling the network', async () => {
+                await settingsPage.coinsTab.openNetworkAdvanceSettings('btc', {
+                    autoEnable: false,
+                });
+                await settingsPage.coinsTab.changeBackend(backendType, bitcoinBackendProxy.url);
+                await settingsPage.coinsTab.expectCustomBackendIndicator('btc');
+                await settingsPage.coinsTab.expectNetworkDisabled('btc');
+                expect(
+                    bitcoinBackendProxy.passthroughCount,
+                    'Expected no communication with the backend while the network is disabled',
+                ).toBe(0);
+            });
+
+            await test.step('Enable BTC & run discovery against the custom backend', async () => {
+                await settingsPage.coinsTab.enableNetwork('btc');
+                await settingsPage.coinsTab.expectCustomBackendIndicator('btc');
+                await settingsPage.coinsTab.activateCoinsButton.click();
+                await Promise.all([
+                    settingsPage.verifyDiscoveryLoaderFinishes(),
+                    page.discoveryShouldFinish(),
+                ]);
+                expect(
+                    bitcoinBackendProxy.passthroughCount,
+                    'Expected discovery to reach the custom backend',
+                ).toBeGreaterThan(0);
+            });
+
+            await test.step('Open BTC account & verify it is loaded successfully', async () => {
+                await walletPage.openAccount({ symbol: 'btc' });
+                await expect(walletPage.emptyAccount).toContainTranslation(
+                    'TR_ACCOUNT_IS_EMPTY_TITLE',
+                );
+            });
+        },
+    );
 });
