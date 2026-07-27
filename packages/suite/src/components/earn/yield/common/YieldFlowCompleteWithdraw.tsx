@@ -55,6 +55,7 @@ export const YieldFlowCompleteWithdraw = ({
                                 contractAddress: receivedValue.token.contractAddress ?? null,
                             }}
                             amount={receivedValue.amount}
+                            data-testid="@yield/flow-complete/received"
                         />
                     </Column>
                 </Row>

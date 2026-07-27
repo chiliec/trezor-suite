@@ -13,12 +13,17 @@ export class YieldFlowSection {
     // Deposit step
     readonly depositButton: Locator;
     readonly depositedToast: Locator;
+    // Withdraw step
+    readonly withdrawButton: Locator;
+    readonly withdrawnToast: Locator;
     // Flow-complete screen
     readonly flowCompleteHeading: Locator;
     readonly flowCompleteStatus: Locator;
     readonly flowCompleteApy: Locator;
     readonly flowCompleteTransferInputAmount: Locator;
     readonly flowCompleteTransferOutputAmount: Locator;
+    readonly flowCompleteReceivedAmount: Locator;
+    readonly backToOverviewButton: Locator;
 
     constructor(private readonly page: Page) {
         this.approvedAmount = this.page.getByTestId('@yield/approve/approved-amount-with-symbol');
@@ -30,6 +35,8 @@ export class YieldFlowSection {
         this.approvedToastAmount = this.page.getByTestId('@toast/tx-approved/amount');
         this.depositButton = this.page.getByTestId('@yield/form/deposit-button');
         this.depositedToast = this.page.getByTestId('@toast/tx-yield-deposit');
+        this.withdrawButton = this.page.getByTestId('@yield/form/withdraw-button');
+        this.withdrawnToast = this.page.getByTestId('@toast/tx-yield-withdraw');
         this.flowCompleteHeading = this.page.getByTestId('@yield/flow-complete/heading');
         this.flowCompleteStatus = this.page.getByTestId('@yield/flow-complete/status');
         this.flowCompleteApy = this.page.getByTestId('@earn/dashboard/apy-percentage');
@@ -38,6 +45,12 @@ export class YieldFlowSection {
         );
         this.flowCompleteTransferOutputAmount = this.page.getByTestId(
             '@yield/flow-complete/transfer/output-with-symbol',
+        );
+        this.flowCompleteReceivedAmount = this.page.getByTestId(
+            '@yield/flow-complete/received-with-symbol',
+        );
+        this.backToOverviewButton = this.page.getByTestId(
+            '@yield/flow-complete/back-to-overview-button',
         );
     }
 }

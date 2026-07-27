@@ -26,6 +26,7 @@ import {
     stablecoinYieldActions,
     submitYieldApproveThunk,
     submitYieldRevokeThunk,
+    useFetchFeesOnce,
 } from '@suite-common/wallet-core';
 import { type Account } from '@suite-common/wallet-types';
 import { isWrappedNativeToken } from '@suite-common/wallet-utils';
@@ -126,6 +127,14 @@ export const useYieldFlow = ({
     const dispatch = useDispatch();
     const { analytics } = useServices(selectDesktopAnalyticsDep);
     const { device } = useDevice();
+
+    // Composing the action transaction reads the network fee info from the store, which is only
+    // fetched on demand (app init for enabled networks, or the send/approve fee UI). Deposits load
+    // it via the approve modal's fee picker, but withdraw/redeem have no approval step — without
+    // this fetch, composing right after enabling the network fails with "Fee info is not
+    // available".
+    useFetchFeesOnce({ networkSymbol: account.symbol });
+
     const methods = useForm<YieldFlowFormValues>({
         mode: 'onChange',
         defaultValues: {
