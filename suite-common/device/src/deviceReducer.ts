@@ -569,6 +569,7 @@ export const prepareDeviceReducer = createReducerWithExtraDeps(
         builder
             .addCase(deviceActions.deviceChanged, (state, action) => {
                 changeDevice(state, action.payload, { connected: true, available: true });
+                persistentDeviceDataReducer(state.persistentDeviceData, action);
             })
             .addCase(deviceActions.setDeviceState, (state, { payload }) => {
                 setDeviceState(state, payload);
@@ -635,15 +636,13 @@ export const prepareDeviceReducer = createReducerWithExtraDeps(
                 isAnyOf(deviceActions.connectDevice, deviceActions.connectUnacquiredDevice),
                 (state, action) => {
                     connectDevice(state, action.payload.device);
+                    persistentDeviceDataReducer(state.persistentDeviceData, action);
                 },
             )
 
-            // Delegate to a subreducer – pass all actions and the slice draft state
-            .addMatcher(
-                () => true,
-                (state, action) => {
-                    persistentDeviceDataReducer(state.persistentDeviceData, action);
-                },
-            );
+            // Delegate to a subreducer – pass all remaining actions not matched here, and the slice draft state
+            .addDefaultCase((state, action) => {
+                persistentDeviceDataReducer(state.persistentDeviceData, action);
+            });
     },
 );
