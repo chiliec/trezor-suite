@@ -81,6 +81,7 @@ export const YieldAmountCard = ({
                         <TextButton
                             type="button"
                             size="small"
+                            data-testid="@yield/form/unit-toggle-button"
                             onClick={unitToggle.onClick}
                             isUnderlined
                         >

@@ -159,4 +159,103 @@ test.describe('stablecoin yield withdrawal', { tag: ['@webOnly', '@T3W1', '@T3T1
             await expect(yieldSection.withdrawButton(usdcPrime.id)).toBeVisible();
         });
     });
+
+    test('User can redeem yield vault shares', async ({
+        yieldSection,
+        yieldFlowSection,
+        txSimulationModal,
+        devicePrompt,
+        device,
+        blockbookMock,
+        yieldMock,
+    }) => {
+        await test.step('Open the withdraw form', async () => {
+            await yieldSection.earnMenuButton.click();
+            await yieldSection.withdrawButton(usdcPrime.id).click();
+        });
+
+        await test.step('Redeem 3 trSHUSDCp shares', async () => {
+            await yieldMock.mockUsdcRedeem();
+            await yieldFlowSection.unitToggleButton.click();
+            await expect(yieldFlowSection.redeemButton).toBeVisible();
+            await yieldFlowSection.amountInput.fill('3');
+            await yieldFlowSection.redeemButton.click();
+
+            await expect(txSimulationModal.sentAsset(0)).toHaveText('Sending 3 trSHUSDCp');
+            await expect(txSimulationModal.sentAssetFiat(0)).toHaveText('-$3.02');
+            await expect(txSimulationModal.receivedAsset(0)).toHaveText('Receiving 3.016822 USDC');
+            await expect(txSimulationModal.receivedAssetFiat(0)).toHaveText('+$3.02');
+            await expect(txSimulationModal.maxFeeAmount).toHaveText('0.000108403 ETH');
+            await txSimulationModal.confirmButton.click();
+
+            await devicePrompt.confirmOnDevicePromptIsShown();
+            await expect(device).toShowOnDisplay({
+                T3W1: {
+                    header: { title: 'Redeem' },
+                    body: [['Review details to', '\n', 'redeem from vault.']],
+                    actions: { right_button: 'Confirm' },
+                },
+            });
+            await devicePrompt.waitForPromptAndClick();
+            await expect(device).toShowOnDisplay({
+                T3W1: {
+                    header: { title: 'Redeem' },
+                    body: [YIELD_USDC_VAULT_DISPLAY_NAME],
+                    actions: { right_button: 'Continue' },
+                },
+                T3T1: {
+                    body: [['Redeem from'], YIELD_USDC_VAULT_DISPLAY_NAME],
+                },
+            });
+            await device.pressYes();
+            await expect(device).toShowOnDisplay({
+                T3W1: {
+                    header: { title: 'Redeem' },
+                    body: [['Redeem amount'], ['3 trSHUSDCp'], ['Chain'], ['Ethereum']],
+                    actions: { right_button: 'Continue' },
+                },
+            });
+            await device.pressYes();
+            await expect(devicePrompt.cryptoAmountWithSymbolOf('fee')).toHaveText(WITHDRAW_MAX_FEE);
+            await expect(device).toShowOnDisplay({
+                T3W1: {
+                    header: { title: 'Redeem' },
+                    body: [['Maximum fee'], device.wrapText(WITHDRAW_MAX_FEE, { isAmount: true })],
+                    actions: { right_button: 'Hold to sign' },
+                },
+            });
+            await devicePrompt.waitForFinalPromptAndConfirm();
+
+            blockbookMock.updateAccountState({
+                txs: 4,
+                nonce: '3',
+                tokens: getAccountTokens({
+                    usdcBalance: '993016822',
+                    shareBalance: '6944238455556494216',
+                }),
+            });
+            await devicePrompt.sendButton.click();
+
+            await expect(yieldFlowSection.withdrawnToast).toBeVisible();
+            await expect(yieldFlowSection.flowCompleteHeading).toHaveTranslation(
+                'TR_EARN_YIELD_WITHDRAW_COMPLETE',
+            );
+            await expect(yieldFlowSection.flowCompleteTransferInputAmount).toHaveText(
+                '3 trSHUSDCp',
+            );
+            await expect(yieldFlowSection.flowCompleteTransferOutputAmount).toHaveText('3.01 USDC');
+
+            await blockbookMock.sendNewBlockNotification(NEW_BLOCK);
+        });
+
+        await test.step('Dashboard shows the reduced position', async () => {
+            await yieldFlowSection.backToOverviewButton.click();
+
+            await expect(yieldSection.depositedAmount(usdcPrime.id)).toHaveTranslation(
+                'TR_EARN_YIELD_DASHBOARD_DEPOSITED',
+                { values: { amount: '6.983177', displaySymbol: 'USDC' } },
+            );
+            await expect(yieldSection.withdrawButton(usdcPrime.id)).toBeVisible();
+        });
+    });
 });
