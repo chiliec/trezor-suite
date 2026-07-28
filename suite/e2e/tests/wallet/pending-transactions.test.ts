@@ -80,6 +80,13 @@ test.describe(
                     await device.pressYes(); // Summary
                     await devicePrompt.sendButton.click();
 
+                    const broadcastToast = page.locator(
+                        '[data-testid="@toast/tx-sent"][data-toast-intent="warning"]',
+                    );
+                    await expect(broadcastToast).toBeVisible();
+                    await expect(broadcastToast).toContainTranslation('TOAST_TX_SENT', {
+                        values: { account: 'Regtest #1' },
+                    });
                     const pendingTransactionsList = page.getByTestId(
                         '@wallet/accounts/transaction-list/pending/group/0',
                     );
@@ -162,6 +169,14 @@ test.describe(
                 await trezorUserEnv.generateBlock({
                     address: accounts.miner_account.address,
                     txids: [accounts.account2.txid],
+                });
+
+                const confirmationToast = page.locator(
+                    '[data-testid="@toast/tx-confirmed"][data-toast-intent="brand"]',
+                );
+                await expect(confirmationToast.first()).toBeVisible();
+                await expect(confirmationToast.first()).toContainTranslation('TOAST_TX_CONFIRMED', {
+                    values: { account: 'Regtest #1' },
                 });
             });
 

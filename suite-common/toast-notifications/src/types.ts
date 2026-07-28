@@ -24,9 +24,23 @@ type TransactionNotificationPayload = {
     descriptor: string;
     symbol: NetworkSymbol;
     txid: string;
+    isFeeBump?: boolean;
 };
 
 type BaseTransactionNotificationPayload = Omit<TransactionNotificationPayload, 'formattedAmount'>;
+
+export type TransactionBroadcastNotificationType =
+    | 'tx-sent'
+    | 'raw-tx-sent'
+    | 'tx-revoked'
+    | 'tx-approved'
+    | 'tx-exchange'
+    | 'tx-staked'
+    | 'tx-unstaked'
+    | 'tx-claimed'
+    | 'tx-yield-deposit'
+    | 'tx-yield-withdraw'
+    | 'tx-yield-claim';
 
 type SentTransactionNotification = {
     type: 'tx-sent';
@@ -84,7 +98,13 @@ type UnwrapTransactionNotification = {
     TransactionNotificationPayload;
 
 type ReceivedTransactionNotification = {
-    type: 'tx-received' | 'tx-confirmed';
+    type: 'tx-received';
+    token?: Pick<TokenInfo, 'contract' | 'name' | 'symbol'>;
+} & TransactionNotificationPayload;
+
+type ConfirmedTransactionNotification = {
+    type: 'tx-confirmed';
+    sourceType?: TransactionBroadcastNotificationType;
     token?: Pick<TokenInfo, 'contract' | 'name' | 'symbol'>;
 } & TransactionNotificationPayload;
 
@@ -180,6 +200,7 @@ export type ToastPayload<TranslationKey extends UnknownTranslationKey = UnknownT
           skipped: number;
       }
     | SentTransactionNotification
+    | ConfirmedTransactionNotification
     | ApproveTransactionNotification
     | RevokeTransactionNotification
     | ExchangeTransactionNotification
@@ -256,6 +277,7 @@ export type NotificationEventPayload = (
           type: typeof AUTH_DEVICE;
       }
     | ReceivedTransactionNotification
+    | ConfirmedTransactionNotification
     | {
           type: typeof DEVICE.CONNECT | typeof DEVICE.CONNECT_UNACQUIRED;
           device: TrezorDevice;
@@ -298,6 +320,7 @@ export type NotificationsRootState<TranslationKey extends string = UnknownTransl
 export type TransactionNotification = (
     | SentTransactionNotification
     | ReceivedTransactionNotification
+    | ConfirmedTransactionNotification
 ) &
     CommonNotificationPayload;
 

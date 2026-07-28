@@ -1,6 +1,6 @@
 import '@suite-common/test-utils/globalOverrides';
 
-import { Translation } from '@suite/intl';
+import { Translation, type TranslationKey } from '@suite/intl';
 import { events } from '@suite-common/analytics';
 import { configureMockStore, fireEvent, screen } from '@suite-common/test-utils';
 import { type NotificationEntry } from '@suite-common/toast-notifications';
@@ -12,8 +12,9 @@ import { extraDependenciesDesktopMock } from '../../../../../mocks/extraDependen
 import { mockInitialAppState } from '../../../../../mocks/mockInitialAppState';
 import { type NotificationViewProps } from '../Notifications/NotificationGroup/NotificationList/NotificationView';
 
-type TradingErrorNotification = Extract<NotificationEntry, { type: 'trading-error' }>;
-type WrapNotification = Extract<NotificationEntry, { type: 'tx-wrap' | 'tx-unwrap' }>;
+type LocalizedNotificationEntry = NotificationEntry<TranslationKey>;
+type TradingErrorNotification = Extract<LocalizedNotificationEntry, { type: 'trading-error' }>;
+type WrapNotification = Extract<LocalizedNotificationEntry, { type: 'tx-wrap' | 'tx-unwrap' }>;
 
 const mockReport = jest.fn();
 
@@ -28,6 +29,35 @@ const DismissableView = ({ onCancel }: NotificationViewProps & { onCancel?: () =
     </button>
 );
 
+const NotificationViewProbe = ({ message, messageValues, variant }: NotificationViewProps) => (
+    <div data-testid="notification-view" data-variant={variant}>
+        <Translation id={message} values={messageValues} />
+    </div>
+);
+
+const renderNotification = (notification: LocalizedNotificationEntry) => {
+    const store = configureMockStore({
+        preloadedState: {
+            ...mockInitialAppState,
+            wallet: {
+                ...mockInitialAppState.wallet,
+                accounts: [],
+                transactions: {
+                    transactions: {},
+                    phishing: {},
+                    fetchStatusDetail: {},
+                },
+            },
+        },
+        serializableCheck: { ignoredActions: [] },
+    });
+
+    return renderWithProviders(
+        store,
+        extraDependenciesDesktopMock.services,
+        <NotificationRenderer render={NotificationViewProbe} notification={notification} />,
+    );
+};
 const renderTradingError = (payload: Omit<TradingErrorNotification, 'context' | 'id'>) => {
     const notification: TradingErrorNotification = { context: 'toast', id: 0, ...payload };
     const store = configureMockStore({
@@ -194,6 +224,71 @@ describe('NotificationRenderer trading-error', () => {
 
         expect(
             screen.getByText('No response from the exchange. Please try again.'),
+        ).toBeInTheDocument();
+    });
+});
+
+describe('NotificationRenderer transaction lifecycle', () => {
+    const transactionPayload = {
+        context: 'toast' as const,
+        id: 1,
+        formattedAmount: '1 ETH',
+        descriptor: 'descriptor',
+        symbol: 'eth' as const,
+        txid: 'txid',
+    };
+
+    it('renders a broadcast transaction as pending', () => {
+        renderNotification({
+            ...transactionPayload,
+            type: 'tx-sent',
+        });
+
+        expect(screen.getByTestId('notification-view')).toHaveAttribute('data-variant', 'warning');
+        expect(
+            screen.getByText('Transaction from descriptor has been broadcast'),
+        ).toBeInTheDocument();
+    });
+
+    it('uses the approved staking pending and fee-bump copy', () => {
+        const { unmount } = renderNotification({
+            ...transactionPayload,
+            type: 'tx-staked',
+        });
+
+        expect(screen.getByText('Your staking transaction is pending')).toBeInTheDocument();
+
+        unmount();
+        renderNotification({
+            ...transactionPayload,
+            type: 'tx-staked',
+            isFeeBump: true,
+        });
+
+        expect(screen.getByText('Your staking transaction has been sped up')).toBeInTheDocument();
+    });
+
+    it('renders a correlated staking confirmation as successful', () => {
+        renderNotification({
+            ...transactionPayload,
+            type: 'tx-confirmed',
+            sourceType: 'tx-staked',
+        });
+
+        expect(screen.getByTestId('notification-view')).toHaveAttribute('data-variant', 'success');
+        expect(
+            screen.getByText('Your staking transaction has been processed on the blockchain'),
+        ).toBeInTheDocument();
+    });
+
+    it('uses generic confirmation copy without a correlated broadcast', () => {
+        renderNotification({
+            ...transactionPayload,
+            type: 'tx-confirmed',
+        });
+
+        expect(
+            screen.getByText('Transaction in descriptor has been successfully confirmed'),
         ).toBeInTheDocument();
     });
 });

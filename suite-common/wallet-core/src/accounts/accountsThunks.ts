@@ -2,7 +2,10 @@ import { events } from '@suite-common/analytics';
 import { selectDevices } from '@suite-common/device';
 import { createThunk } from '@suite-common/redux-utils';
 import { getTxsPerPage } from '@suite-common/suite-utils';
-import { notificationsActions } from '@suite-common/toast-notifications';
+import {
+    notificationsActions,
+    selectTransactionBroadcastNotificationByTxid,
+} from '@suite-common/toast-notifications';
 import { selectCoinDefinitions } from '@suite-common/token-definitions';
 import { getNetworkFeatures } from '@suite-common/wallet-config';
 import { type Account, type AccountKey } from '@suite-common/wallet-types';
@@ -236,15 +239,22 @@ export const fetchAndUpdateAccountThunk = createThunk(
                 const formattedAmount = token
                     ? formatTokenAmount(token)
                     : formatNetworkAmount(tx.amount, account.symbol, true, areSatoshisUsed);
+                const sourceNotification = selectTransactionBroadcastNotificationByTxid(
+                    getState(),
+                    tx.txid,
+                );
 
                 dispatch(
-                    notificationsActions.addEvent({
+                    notificationsActions.addToast({
                         type: 'tx-confirmed',
+                        sourceType: sourceNotification?.type,
                         formattedAmount,
                         device: accountDevice,
+                        token,
                         descriptor: account.descriptor,
                         symbol: account.symbol,
                         txid: tx.txid,
+                        style: { maxWidth: 'auto' },
                     }),
                 );
             });
