@@ -3,6 +3,7 @@ import { selectNetworkTokenDefinitions } from '@suite-common/token-definitions';
 import { advancedSearchTransactions } from '@suite-common/transaction-search';
 import {
     TRANSACTIONS_MODULE_PREFIX,
+    createSimpleTargetId,
     selectAccountTransactionsMarkedAsNotScam,
     selectBaseCurrency,
     selectHistoricFiatRates,
@@ -19,12 +20,12 @@ export const exportTransactionsThunk = createThunk(
     async (
         {
             account,
-            accountName,
+            defaultAccountName,
             type,
             searchQuery,
         }: {
             account: Account;
-            accountName: string;
+            defaultAccountName: string;
             type: ExportFileType;
             searchQuery: string;
         },
@@ -41,20 +42,8 @@ export const exportTransactionsThunk = createThunk(
             account.key,
         );
 
-        // TODO: this is not nice (copy-paste)
-        // metadata reducer is still not part of trezor-common and I can not import it
-        // here. so either followup, or maybe when I have a moment I'll refactor it  before merging this
-        const provider = getState().metadata?.providers.find(
-            // @ts-expect-error
-            p => p.clientId === getState().metadata.selectedProvider.labels,
-        );
-        const metadataKeys = account?.metadata[1];
-        let labels = {};
-        if (!metadataKeys?.fileName || !provider?.data[metadataKeys.fileName]) {
-            labels = { outputLabels: {} };
-        } else {
-            labels = provider.data[metadataKeys.fileName];
-        }
+        const accountLabels = selectAccountLabelsForSearch(getState(), account);
+        const accountName = accountLabels.accountLabel || defaultAccountName;
 
         const transactions = getAccountTransactions(account.key, allTransactions)
             .filter(transaction => transaction.blockHeight !== -1)
@@ -62,16 +51,15 @@ export const exportTransactionsThunk = createThunk(
                 ...transaction,
                 targets: transaction.targets.map(target => ({
                     ...target,
-                    // @ts-expect-error
-                    metadataLabel: labels.outputLabels?.[transaction.txid]?.[target.n],
+                    metadataLabel: accountLabels.outputLabels
+                        .get(transaction.txid)
+                        ?.get(createSimpleTargetId(target)),
                 })),
             }));
 
-        const searchLabels = selectAccountLabelsForSearch(getState(), account);
-
         const filteredTransaction =
             searchQuery.trim() !== ''
-                ? advancedSearchTransactions(transactions, searchLabels, searchQuery)
+                ? advancedSearchTransactions(transactions, accountLabels, searchQuery)
                 : transactions;
 
         // getAccountTransactions doesn't guarantee transactions will be sorted
