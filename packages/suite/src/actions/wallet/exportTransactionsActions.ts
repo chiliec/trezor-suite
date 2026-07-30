@@ -15,20 +15,17 @@ import { getAccountTransactions } from '@suite-common/wallet-utils';
 import { selectAccountLabelsForSearch } from 'src/selectors/suite/selectAccountLabelsForSearch';
 import { formatData, getExportedFileName } from 'src/utils/wallet/exportTransactionsUtils';
 
+type ExportTransactionsThunkParams = {
+    account: Account;
+    defaultAccountName: string;
+    type: ExportFileType;
+    searchQuery: string;
+};
+
 export const exportTransactionsThunk = createThunk(
     `${TRANSACTIONS_MODULE_PREFIX}/exportTransactions`,
     async (
-        {
-            account,
-            defaultAccountName,
-            type,
-            searchQuery,
-        }: {
-            account: Account;
-            defaultAccountName: string;
-            type: ExportFileType;
-            searchQuery: string;
-        },
+        { account, defaultAccountName, type, searchQuery }: ExportTransactionsThunkParams,
         { getState, extra },
     ) => {
         const { services } = extra;
