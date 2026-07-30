@@ -28,7 +28,7 @@ import { type TransactionTarget } from '@trezor/connect';
 import { BigNumber, isNotNull } from '@trezor/utils';
 
 type AccountTransactionForExports = Omit<WalletAccountTransaction, 'targets'> & {
-    targets: (TransactionTarget & { metadataLabel?: string })[];
+    targets: (TransactionTarget & { outputLabel?: string })[];
 };
 
 type Data = {
@@ -202,7 +202,7 @@ const prepareContent = (
                         fee: !hasFeeBeenAlreadyUsed ? t.fee : '', // fee only once per tx
                         feeSymbol: !hasFeeBeenAlreadyUsed ? symbol : '',
                         address: target.isAddress ? (target.addresses[0] ?? '') : '', // SENT - it is destination address, RECV - it is MY address
-                        label: target.isAddress && target.metadataLabel ? target.metadataLabel : '',
+                        label: target.isAddress && target.outputLabel ? target.outputLabel : '',
                         amount: target.isAddress ? target.amount : '',
                         symbol: target.isAddress ? symbol : '',
                         fiat: target.isAddress ? getFiatAmount(target.amount, historicRate) : '',
