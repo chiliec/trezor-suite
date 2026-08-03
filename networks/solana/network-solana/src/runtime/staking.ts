@@ -441,7 +441,12 @@ export const prepareStakeSolTx = async ({
             solanaTxMeta: tx.txMeta,
         };
     } catch (e) {
-        console.error(e);
+        // Do not log the raw error: the Solana staking tx-build path surfaces backend/RPC
+        // messages that can embed the sender account address (`from`, forwarded to
+        // getDelegations/RPC as `sender`) and the staked amount. console.error is forwarded to
+        // Sentry via captureConsoleIntegration, so log a static string instead (mirrors the
+        // ethereumStaking.ts prepare*EthTx catches). The errorMessage return only reaches the UI.
+        console.error('Failed to prepare Solana staking transaction');
 
         return {
             success: false,
@@ -475,7 +480,9 @@ export const prepareUnstakeSolTx = async ({
             solanaTxMeta: tx.txMeta,
         };
     } catch (e) {
-        console.error(e);
+        // See prepareStakeSolTx: log a static string, not the raw error, to avoid leaking the
+        // sender address / amount embedded in backend/RPC messages to Sentry.
+        console.error('Failed to prepare Solana unstaking transaction');
 
         return {
             success: false,
@@ -504,7 +511,9 @@ export const prepareClaimSolTx = async ({
             solanaTxMeta: tx.txMeta,
         };
     } catch (e) {
-        console.error(e);
+        // See prepareStakeSolTx: log a static string, not the raw error, to avoid leaking the
+        // sender address / amount embedded in backend/RPC messages to Sentry.
+        console.error('Failed to prepare Solana claim transaction');
 
         return {
             success: false,
