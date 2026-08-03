@@ -179,7 +179,10 @@ export const sendYieldTransaction = async ({
 
         return pushResponse.payload;
     } catch (error) {
-        console.error(error);
+        // Do not log the raw error: a failed broadcast surfaces the node's rejection message,
+        // which (via viem) can embed the full signed transaction hex and the from-address.
+        // console.error is forwarded to Sentry via captureConsoleIntegration, so log a static string.
+        console.error('sendYieldTransaction failed');
         throw error;
     } finally {
         dispatch(stablecoinYieldActions.discardTransaction());
