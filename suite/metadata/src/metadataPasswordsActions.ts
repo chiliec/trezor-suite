@@ -184,12 +184,23 @@ export const init = () => async (dispatch: Dispatch, getState: () => MetadataRoo
             if (!getState().suite.online || !device?.state || !fileName || !aesKey) {
                 return;
             }
-            dispatch(
-                fetchPasswords({
-                    fileName,
-                    aesKey,
-                }),
-            );
+            // fetchPasswords returns a promise that rejects on a failed provider
+            // fetch or a decrypt error. Unlike the labels sibling
+            // (fetchAndSaveMetadata, which self-catches internally), it is dispatched
+            // here fire-and-forget, so without a .catch every failing poll produces a
+            // recurring unhandled promise rejection. Swallow it with a static log only
+            // — the rejection value can embed provider/decrypt details that must not be
+            // forwarded raw to Sentry via captureConsoleIntegration.
+            Promise.resolve(
+                dispatch(
+                    fetchPasswords({
+                        fileName,
+                        aesKey,
+                    }),
+                ),
+            ).catch(() => {
+                console.error('metadata passwords fetch interval failed');
+            });
         }, METADATA_PASSWORDS.FETCH_INTERVAL);
     }
 };
