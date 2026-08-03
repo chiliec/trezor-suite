@@ -3,6 +3,7 @@
  * Used by both connect-ws (WebSocket) and mcp-server (MCP) modules
  * to route responses from the renderer back to the correct caller.
  */
+import { validateIpcMessage } from '@trezor/ipc-proxy';
 import type { ConnectPopupResponse } from '@trezor/suite-desktop-api';
 import { type Deferred, createDeferred } from '@trezor/utils';
 
@@ -50,7 +51,9 @@ export const initConnectPopupResponseHandler = () => {
 
     const { logger } = global;
 
-    ipcMain.handle('connect-popup/response', (_, response: ConnectPopupResponse) => {
+    ipcMain.handle('connect-popup/response', (ipcEvent, response: ConnectPopupResponse) => {
+        validateIpcMessage({ ipcEvent });
+
         const success = (response as { success?: boolean })?.success;
         logger.info(
             LOG_PREFIX,
@@ -74,7 +77,9 @@ export const initConnectPopupResponseHandler = () => {
         deferred.resolve(response);
     });
 
-    ipcMain.handle('connect-popup/ready', () => {
+    ipcMain.handle('connect-popup/ready', ipcEvent => {
+        validateIpcMessage({ ipcEvent });
+
         appInit?.resolve();
     });
 };

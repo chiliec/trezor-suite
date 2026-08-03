@@ -1,6 +1,7 @@
 import { exec } from 'child_process';
 
 import { isLinux, isMacOs, isWindows } from '@trezor/env-utils';
+import { validateIpcMessage } from '@trezor/ipc-proxy';
 import { type InvokeResult } from '@trezor/suite-desktop-api';
 
 import { ipcMain } from '../typed-electron';
@@ -82,7 +83,9 @@ const openBluetoothPermissions = () => {
 };
 
 export const init: ModuleInit = () => {
-    ipcMain.handle('system/open-settings', (_, settings) => {
+    ipcMain.handle('system/open-settings', (ipcEvent, settings) => {
+        validateIpcMessage({ ipcEvent });
+
         if (settings === 'bluetooth') {
             return openBluetoothSettings();
         }
