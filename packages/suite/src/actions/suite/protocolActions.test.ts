@@ -125,6 +125,18 @@ describe('Protocol actions', () => {
         });
     });
 
+    it('does not throw on a trading-redirect deeplink with malformed percent-encoding', () => {
+        const store = mockStore(getInitialState());
+
+        // `%` is an invalid percent-escape; decodeURIComponent would throw a URIError
+        // synchronously. The URI is untrusted (web `?uri=` param / desktop
+        // `protocol/open` deeplink), so the handler must decode defensively and bail
+        // out instead of crashing the (synchronous) protocol-handling dispatch.
+        expect(() =>
+            store.dispatch(protocolActions.handleProtocolRequest('trezorsuite://buy-redirect?p=%')),
+        ).not.toThrow();
+    });
+
     it('resets protocol state', async () => {
         const store = mockStore(getInitialState());
 
