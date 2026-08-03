@@ -1,5 +1,6 @@
 import { nativeTheme } from 'electron';
 
+import { validateIpcMessage } from '@trezor/ipc-proxy';
 import { type SuiteThemeVariant } from '@trezor/suite-desktop-api';
 
 import { Store } from '../libs/store';
@@ -28,7 +29,14 @@ export const init: ModuleInit = ({ mainWindowProxy }) => {
         nativeTheme.themeSource = theme;
     }
 
-    ipcMain.on('theme/change', (_, newTheme) => setThemeManually(newTheme, store));
+    ipcMain.on('theme/change', (ipcEvent, newTheme) => {
+        // Reject messages that do not originate from our own renderer (defense-in-depth,
+        // consistent with the other IPC handlers). Without this, any frame able to reach
+        // the main process could change and persist the app theme.
+        validateIpcMessage({ ipcEvent });
+
+        setThemeManually(newTheme, store);
+    });
 
     nativeTheme.on('updated', () => {
         if (store.getThemeSettings() !== 'system') return;
