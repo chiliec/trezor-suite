@@ -92,8 +92,15 @@ const fetchTransactionPage = async (
         )
     ).filter(isNotNullOrUndefined);
 
-const isValidTransaction = (tx: ParsedTransactionWithMeta): tx is SolanaValidParsedTxWithMeta =>
-    !!(tx?.meta && tx.transaction && tx.blockTime);
+export const isValidTransaction = (
+    tx: ParsedTransactionWithMeta,
+): tx is SolanaValidParsedTxWithMeta =>
+    // `transaction.signatures[0]` is dereferenced unconditionally by solanaUtils.transformTransaction
+    // (txid) and getDetails, so an untrusted/compromised RPC returning an otherwise-valid tx with an
+    // empty (or missing) `signatures` array would crash the whole account-history `.map` (poison one
+    // record → fail entire page). Require at least one signature here so such records are dropped at
+    // the boundary instead.
+    !!(tx?.meta && tx.transaction && tx.blockTime && tx.transaction.signatures?.length);
 
 const pushTransaction = async (request: Request<MessageTypes.PushTransaction>) => {
     const rawTx = request.payload.hex.startsWith('0x')
