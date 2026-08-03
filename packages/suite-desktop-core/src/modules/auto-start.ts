@@ -12,7 +12,13 @@ export const SERVICE_NAME = 'auto-start';
 export const init: ModuleInit = () => {
     const { logger } = global;
 
-    ipcMain.on('app/auto-start', (_, enabled: boolean) => {
+    ipcMain.on('app/auto-start', (ipcEvent, enabled: boolean) => {
+        // Reject messages that do not originate from our own renderer (defense-in-depth,
+        // consistent with the sibling `app/auto-start/is-enabled` handler below). Without
+        // this, any frame able to reach the main process could toggle OS auto-start and, on
+        // Linux, cause an autostart `.desktop` file to be written/removed.
+        validateIpcMessage({ ipcEvent });
+
         logger.debug(SERVICE_NAME, 'Auto start ' + (enabled ? 'enabled' : 'disabled'));
         setAutoStartEnabled(enabled);
     });
