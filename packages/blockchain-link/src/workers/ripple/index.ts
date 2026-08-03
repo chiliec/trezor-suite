@@ -29,6 +29,24 @@ const RESERVE = {
     OWNER: RIPPLE_OWNER_RESERVE_DEFAULT,
 };
 
+// Update the reserve cache from an xrpl `ledgerClosed` stream message. A malformed
+// or malicious rippled backend (custom XRP backends are user-selectable) may send a
+// ledgerClosed notification that omits `reserve_base`/`reserve_inc`; a bare
+// `.toString()` on the missing field would throw synchronously out of xrpl's ws
+// 'message' handler (Connection.onMessage → emit) and become an uncaughtException
+// that crashes the blockchain worker (remote DoS). Guard each field before reading it.
+export const updateReserveFromLedger = (
+    reserve: { BASE: string; OWNER: string },
+    ledger: Pick<LedgerStream, 'reserve_base' | 'reserve_inc'> | undefined,
+) => {
+    if (ledger?.reserve_base != null) {
+        reserve.BASE = ledger.reserve_base.toString();
+    }
+    if (ledger?.reserve_inc != null) {
+        reserve.OWNER = ledger.reserve_inc.toString();
+    }
+};
+
 const getInfo = async (request: Request<MessageTypes.GetInfo>) => {
     const client = await request.connect();
     const response = await client.request({
@@ -461,9 +479,8 @@ class RippleWorker extends BaseWorker<XrplAPI> {
 
         // xrpl API automatically sets a ledger listener
         client.on('ledgerClosed', ledger => {
-            // store current ledger values
-            RESERVE.BASE = ledger.reserve_base.toString();
-            RESERVE.OWNER = ledger.reserve_inc.toString();
+            // store current ledger values (guarded — see updateReserveFromLedger)
+            updateReserveFromLedger(RESERVE, ledger);
         });
 
         client.on('disconnected', () => {
