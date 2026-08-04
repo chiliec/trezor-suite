@@ -26,6 +26,14 @@ const getInitialState = (custom?: any): any => ({
     },
 });
 
+const device = {
+    features: {
+        major_version: 2,
+        internal_model: DeviceModelInternal.T2T1,
+    },
+    path: '1',
+} as any;
+
 const initStore = (custom?: any) => {
     const preloadedState = getInitialState(custom);
     const store = configureMockStore({
@@ -49,7 +57,7 @@ describe('Recovery Thunks', () => {
 
     it('recoverDeviceThunk', async () => {
         const store = initStore();
-        const action = store.dispatch(recoverDeviceThunk());
+        const action = store.dispatch(recoverDeviceThunk({ device }));
         expect(store.getState().recovery.status).toMatch('in-progress');
         await action;
         expect(store.getState().recovery.status).toMatch('finished');
@@ -57,7 +65,7 @@ describe('Recovery Thunks', () => {
 
     it('checkSeedThunk', async () => {
         const store = initStore();
-        const action = store.dispatch(checkSeedThunk());
+        const action = store.dispatch(checkSeedThunk({ device }));
         expect(store.getState().recovery.status).toMatch('in-progress');
         await action;
         expect(store.getState().recovery.status).toMatch('finished');

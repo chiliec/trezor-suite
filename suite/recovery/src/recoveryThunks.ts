@@ -1,6 +1,7 @@
 import { asTypedDesktopAnalytics, events } from '@suite/analytics';
 import { selectSelectedDevice } from '@suite-common/device';
 import { createThunk } from '@suite-common/redux-utils';
+import type { AcquiredDevice } from '@suite-common/suite-types';
 import TrezorConnect, { PROTO, type RecoveryDevice } from '@trezor/connect';
 import { DeviceModelInternal } from '@trezor/device-utils';
 
@@ -25,12 +26,9 @@ const recoveryInputTypeToInputMethod: Record<RecoveryInputType, PROTO.RecoveryDe
 
 export const checkSeedThunk = createThunk(
     `${actionPrefix}/checkSeedThunk`,
-    async (_, { dispatch, getState, extra }) => {
+    async ({ device }: { device: AcquiredDevice }, { dispatch, getState, extra }) => {
         const recoveryInputType = selectRecoveryInputType(getState());
         const wordsCount = selectWordsCount(getState());
-        const device = selectSelectedDevice(getState());
-
-        if (!device?.features) return;
 
         dispatch(recoveryActions.setError(undefined));
 
@@ -74,14 +72,10 @@ export const checkSeedThunk = createThunk(
 
 export const recoverDeviceThunk = createThunk(
     `${actionPrefix}/recoverDeviceThunk`,
-    async (_, { dispatch, getState }) => {
+    async ({ device }: { device: AcquiredDevice }, { dispatch, getState }) => {
         const recoveryInputType = selectRecoveryInputType(getState());
         const wordsCount = selectWordsCount(getState());
-        const device = selectSelectedDevice(getState());
 
-        if (!device?.features) {
-            return;
-        }
         dispatch(recoveryActions.setError(undefined));
 
         if (device.features.internal_model === DeviceModelInternal.T1B1) {
@@ -149,12 +143,15 @@ export const recoveryRerunThunk = createThunk<
         return rejectWithValue('recovery not in progress');
     }
 
+    // Pass the device with the freshly-loaded features so the follow-up runs against the current state.
+    const deviceWithFreshFeatures: AcquiredDevice = { ...device, features };
+
     if (!features.initialized) {
-        dispatch(recoverDeviceThunk());
+        dispatch(recoverDeviceThunk({ device: deviceWithFreshFeatures }));
     }
 
     if (features.initialized) {
-        dispatch(checkSeedThunk());
+        dispatch(checkSeedThunk({ device: deviceWithFreshFeatures }));
     }
 
     return { initialized: features.initialized };

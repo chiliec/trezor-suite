@@ -91,7 +91,7 @@ export const RecoveryStep = () => {
                             if (shouldSkipSelection) {
                                 dispatch(recoveryActions.setRecoveryInputType('advanced'));
                                 dispatch(updateAnalytics({ recoveryType: 'advanced' }));
-                                dispatch(recoverDeviceThunk());
+                                dispatch(recoverDeviceThunk({ device }));
                             } else {
                                 dispatch(recoveryActions.setStatus('select-recovery-type'));
                             }
@@ -115,7 +115,7 @@ export const RecoveryStep = () => {
                 innerActions={
                     <OnboardingCard.Button
                         data-testid="@onboarding/recovery/start-button"
-                        onClick={() => dispatch(recoverDeviceThunk())}
+                        onClick={() => dispatch(recoverDeviceThunk({ device }))}
                     >
                         <Translation id="TR_START_RECOVERY" />
                     </OnboardingCard.Button>
@@ -144,7 +144,7 @@ export const RecoveryStep = () => {
         const handleSelect = (type: RecoveryInputType) => {
             dispatch(recoveryActions.setRecoveryInputType(type));
             dispatch(updateAnalytics({ recoveryType: type }));
-            dispatch(recoverDeviceThunk());
+            dispatch(recoverDeviceThunk({ device }));
         };
 
         return (
@@ -293,7 +293,7 @@ export const RecoveryStep = () => {
                         onClick={
                             deviceModelInternal === DeviceModelInternal.T1B1
                                 ? () => dispatch(recoveryActions.resetReducer())
-                                : () => dispatch(recoverDeviceThunk())
+                                : () => dispatch(recoverDeviceThunk({ device }))
                         }
                         intent="critical"
                     >
