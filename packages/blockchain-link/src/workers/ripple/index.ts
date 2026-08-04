@@ -5,6 +5,7 @@ import type {
     MessageTypes,
     Response,
     SubscriptionAccountInfo,
+    Transaction,
 } from '@trezor/blockchain-link-types';
 import * as utils from '@trezor/blockchain-link-utils/src/ripple';
 import { getSuiteVersion } from '@trezor/env-utils';
@@ -13,7 +14,12 @@ import {
     RIPPLE_OWNER_RESERVE_DEFAULT,
 } from '@trezor/network-ripple/constants';
 import xrpl from '@trezor/network-ripple/runtime';
-import type { LedgerStream, TransactionStream, XrplAPI } from '@trezor/network-ripple/types';
+import type {
+    AccountTxTransaction,
+    LedgerStream,
+    TransactionStream,
+    XrplAPI,
+} from '@trezor/network-ripple/types';
 import { type TimerId } from '@trezor/type-utils';
 import { BigNumber } from '@trezor/utils/src/bigNumber';
 
@@ -46,6 +52,23 @@ export const updateReserveFromLedger = (
         reserve.OWNER = ledger.reserve_inc.toString();
     }
 };
+
+// The `account_tx` `transactions` field is raw JSON from a user-selectable rippled
+// backend; the xrpl type declares it as an array, but a malformed or malicious backend
+// may return a non-array (or omit it). A bare `.flatMap` on such a value throws
+// synchronously and rejects the whole getAccountInfo handler (per-account history DoS).
+// Guard the array shape and skip records missing `tx_json`.
+export const transformAccountTransactions = (
+    transactions: AccountTxTransaction[] | undefined,
+    descriptor: string,
+): Transaction[] =>
+    Array.isArray(transactions)
+        ? transactions.flatMap(raw =>
+              raw?.tx_json != null
+                  ? [utils.transformTransaction(raw.hash, raw.tx_json, raw.meta, descriptor)]
+                  : [],
+          )
+        : [];
 
 const getInfo = async (request: Request<MessageTypes.GetInfo>) => {
     const client = await request.connect();
@@ -178,10 +201,9 @@ const getAccountInfo = async (request: Request<MessageTypes.GetAccountInfo>) => 
         api_version: 2,
     });
 
-    account.history.transactions = response.result.transactions.flatMap(raw =>
-        raw.tx_json != null
-            ? [utils.transformTransaction(raw.hash, raw.tx_json, raw.meta, payload.descriptor)]
-            : [],
+    account.history.transactions = transformAccountTransactions(
+        response.result.transactions,
+        payload.descriptor,
     );
 
     return {
