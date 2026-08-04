@@ -1,4 +1,9 @@
-import { parseDrepBech32, validateCardanoDrep } from './cardanoStakingUtils';
+import { CARDANO_EVERSTAKE_STAKING_POOL } from '@suite-common/wallet-constants';
+
+import { parseDrepBech32, selectBestCardanoPool, validateCardanoDrep } from './cardanoStakingUtils';
+
+// A real, decodable Cardano pool id (bech32, "pool1..." prefix).
+const VALID_POOL_ID = 'pool13rt3ngkek4l876980ect869cu978d36dcyh22ts4nwuf7ncq02u';
 
 // Fixtures generated with @scure/base bech32.encode('drep', toWords(payload)):
 // - 28-byte payload            -> CIP-105 legacy DRep (key hash)
@@ -42,5 +47,42 @@ describe('parseDrepBech32', () => {
     // by the leading validateCardanoDrep guard rather than reaching parseDrepCip129.
     it('rejects an unsupported-header CIP-129 id via the validation guard', () => {
         expect(() => parseDrepBech32(CIP129_UNSUPPORTED_HEADER)).toThrow('Not a DRep bech32');
+    });
+});
+
+describe('selectBestCardanoPool', () => {
+    it('returns the Everstake fallback for an empty/undefined pools list', () => {
+        expect(selectBestCardanoPool(undefined)).toBe(CARDANO_EVERSTAKE_STAKING_POOL);
+        expect(selectBestCardanoPool([])).toBe(CARDANO_EVERSTAKE_STAKING_POOL);
+    });
+
+    it('picks a pool within the saturation threshold and decodes its id', () => {
+        const result = selectBestCardanoPool([{ id: VALID_POOL_ID, saturation: 10, apy: 5 }]);
+
+        expect(result.bech32).toBe(VALID_POOL_ID);
+        expect(result.hex).toMatch(/^[0-9a-f]+$/);
+    });
+
+    // Regression: the earn-staking backend response schema validates pool.id only as a
+    // string, not as a decodable bech32 pool id. poolBech32ToHex (bech32.decode) throws on a
+    // malformed id, and selectBestCardanoPool runs inside the render-time selector
+    // selectPoolStatsApy — a throw there would crash the render. A malformed id must fall
+    // back to the Everstake pool instead of throwing.
+    it('does not throw and falls back to Everstake when the selected pool id is not decodable', () => {
+        expect(() =>
+            selectBestCardanoPool([{ id: 'not-a-bech32-pool-id', saturation: 10, apy: 5 }]),
+        ).not.toThrow();
+
+        expect(
+            selectBestCardanoPool([{ id: 'not-a-bech32-pool-id', saturation: 10, apy: 5 }]),
+        ).toBe(CARDANO_EVERSTAKE_STAKING_POOL);
+    });
+
+    // The fallback branch (no pool below the saturation threshold → last, lowest-saturation
+    // pool) must be throw-safe too.
+    it('does not throw when the lowest-saturation fallback pool id is not decodable', () => {
+        expect(() =>
+            selectBestCardanoPool([{ id: 'still-not-bech32', saturation: 90, apy: 1 }]),
+        ).not.toThrow();
     });
 });

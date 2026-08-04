@@ -92,27 +92,37 @@ export const poolBech32ToHex = (poolId: string): string => {
     return Buffer.from(bytes).toString('hex');
 };
 
+// poolBech32ToHex throws (bech32.decode) on a malformed pool id; this returns null instead
+// so callers reached during render can fall back safely rather than crash.
+const tryPoolBech32ToHex = (poolId: string): string | null => {
+    try {
+        return poolBech32ToHex(poolId);
+    } catch {
+        return null;
+    }
+};
+
 export const selectBestCardanoPool = (pools?: AdaPools['pools']) => {
     if (!pools || pools.length === 0) return CARDANO_EVERSTAKE_STAKING_POOL;
 
     // find the one within the threshold
     const bestPool = pools.find(pool => pool.saturation < CARDANO_POOL_SATURATION_SAFE_THRESHOLD);
 
-    if (bestPool) {
-        return {
-            hex: poolBech32ToHex(bestPool.id),
-            bech32: bestPool.id,
-        };
-    }
+    // otherwise pick the last one (lowest saturation)
+    const selectedPool = bestPool ?? pools[pools.length - 1];
+    if (!selectedPool) return CARDANO_EVERSTAKE_STAKING_POOL;
 
-    // pick the last one (lowest saturation)
-    const fallbackIndex = pools.length - 1;
-    // @ts-expect-error: indexing with noUncheckedIndexedAccess
-    const fallback: (typeof pools)[number] = pools[fallbackIndex];
+    // A pool id from the earn-staking backend is only schema-validated as a string, not as a
+    // decodable bech32 pool id. poolBech32ToHex (bech32.decode) throws on a malformed id, and
+    // selectBestCardanoPool runs inside a render-time selector (selectPoolStatsApy) as well as
+    // during tx composition — a throw here would crash the render. Fall back to the Everstake
+    // pool when the selected id cannot be decoded instead of throwing.
+    const hex = tryPoolBech32ToHex(selectedPool.id);
+    if (hex === null) return CARDANO_EVERSTAKE_STAKING_POOL;
 
     return {
-        hex: poolBech32ToHex(fallback.id),
-        bech32: fallback.id,
+        hex,
+        bech32: selectedPool.id,
     };
 };
 
