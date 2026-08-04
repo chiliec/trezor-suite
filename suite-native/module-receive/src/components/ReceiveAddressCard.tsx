@@ -16,12 +16,14 @@ type ReceiveAddressCardProps = {
     accountKey: AccountKey;
     address: string;
     tokenContract?: TokenAddress;
+    onCopyAddress: () => void;
 };
 
 export const ReceiveAddressCard = ({
     accountKey,
     address,
     tokenContract,
+    onCopyAddress,
 }: ReceiveAddressCardProps) => {
     const accountDescriptor = useSelector((state: AccountsRootState) =>
         selectAccountDescriptor(state, accountKey),
@@ -48,6 +50,7 @@ export const ReceiveAddressCard = ({
                 networkSymbol={symbol}
                 tokenContract={tokenContract}
                 showLabelEdit={!isTokenAddress}
+                onCopyAddress={onCopyAddress}
             />
             <ReceiveAddressInfo networkSymbol={symbol} isTokenAddress={isTokenAddress} />
         </VStack>

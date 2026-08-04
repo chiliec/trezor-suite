@@ -1,13 +1,12 @@
-import { Pressable, useWindowDimensions } from 'react-native';
+import { useWindowDimensions } from 'react-native';
 
 import type { NetworkSymbol } from '@suite-common/wallet-config';
 import { type AccountDescriptor, type TokenAddress } from '@suite-common/wallet-types';
 import { AddressLabelEditable } from '@suite-native/address';
-import { Card, VStack } from '@suite-native/atoms';
-import { useCopyToClipboard } from '@suite-native/clipboard';
+import { Box, Card, VStack } from '@suite-native/atoms';
+import { ClipboardCopyMenu } from '@suite-native/clipboard';
 import { AddressFormatter } from '@suite-native/formatters';
 import { TokenIcon } from '@suite-native/icons';
-import { useTranslate } from '@suite-native/intl';
 import { QRCode } from '@suite-native/qr-code';
 import type { StaticSessionId } from '@trezor/connect';
 import { prepareNativeStyle, useNativeStyles } from '@trezor/styles-native';
@@ -19,6 +18,7 @@ type ReceiveAddressDetailsProps = {
     networkSymbol: NetworkSymbol;
     tokenContract?: TokenAddress;
     showLabelEdit?: boolean;
+    onCopyAddress: () => void;
 };
 
 const addressContainer = prepareNativeStyle(() => ({
@@ -26,9 +26,8 @@ const addressContainer = prepareNativeStyle(() => ({
     alignItems: 'center',
 }));
 
-const cardStyle = prepareNativeStyle(utils => ({
-    marginHorizontal: utils.spacings.sp8,
-    marginTop: utils.spacings.sp8,
+const cardStyle = prepareNativeStyle(() => ({
+    overflow: 'hidden',
 }));
 
 const MAX_RECEIVE_QR_CODE_SIZE = 310;
@@ -40,9 +39,8 @@ export const ReceiveAddressDetails = ({
     networkSymbol,
     tokenContract,
     showLabelEdit = true,
+    onCopyAddress,
 }: ReceiveAddressDetailsProps) => {
-    const copyToClipboard = useCopyToClipboard();
-    const { translate } = useTranslate();
     const {
         applyStyle,
         utils: { spacings },
@@ -56,30 +54,28 @@ export const ReceiveAddressDetails = ({
         screenHorizontalPadding + cardHorizontalMargin + qrCodeHorizontalPadding;
     const qrCodeSize = Math.min(MAX_RECEIVE_QR_CODE_SIZE, windowWidth - horizontalOffset);
 
-    const handleCopyAddress = async () => {
-        await copyToClipboard(address, translate('qrCode.addressCopied'));
-    };
-
     return (
         <VStack spacing="sp24" flex={1}>
-            <Pressable onLongPress={handleCopyAddress}>
-                <Card noPadding style={applyStyle(cardStyle)}>
-                    <QRCode
-                        data={address}
-                        qrCodeSize={qrCodeSize}
-                        paddingHorizontal="sp16"
-                        paddingVertical="sp16"
-                        centerIcon={
-                            <TokenIcon
-                                symbol={networkSymbol}
-                                contractAddress={tokenContract}
-                                showNetworkIcon={tokenContract !== undefined}
-                                size="large"
-                            />
-                        }
-                    />
-                </Card>
-            </Pressable>
+            <Box marginHorizontal="sp8" marginTop="sp8">
+                <ClipboardCopyMenu onCopy={onCopyAddress}>
+                    <Card noPadding noShadow style={applyStyle(cardStyle)}>
+                        <QRCode
+                            data={address}
+                            qrCodeSize={qrCodeSize}
+                            paddingHorizontal="sp16"
+                            paddingVertical="sp16"
+                            centerIcon={
+                                <TokenIcon
+                                    symbol={networkSymbol}
+                                    contractAddress={tokenContract}
+                                    showNetworkIcon={tokenContract !== undefined}
+                                    size="large"
+                                />
+                            }
+                        />
+                    </Card>
+                </ClipboardCopyMenu>
+            </Box>
             <VStack spacing="sp8" alignItems="center" justifyContent="center" flex={1}>
                 {showLabelEdit && (
                     <AddressLabelEditable
@@ -90,7 +86,7 @@ export const ReceiveAddressDetails = ({
                         testID="@receive/address-label"
                     />
                 )}
-                <Pressable onLongPress={handleCopyAddress} style={applyStyle(addressContainer)}>
+                <ClipboardCopyMenu onCopy={onCopyAddress} style={applyStyle(addressContainer)}>
                     <AddressFormatter
                         value={address}
                         format="long"
@@ -98,7 +94,7 @@ export const ReceiveAddressDetails = ({
                         textAlign="center"
                         testID="@receive/confirmed-receive-address"
                     />
-                </Pressable>
+                </ClipboardCopyMenu>
             </VStack>
         </VStack>
     );
