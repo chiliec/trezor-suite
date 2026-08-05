@@ -978,18 +978,23 @@ const getEthereumRbfParams = (
 
     const txSignature = getEvmTransactionTextSignature(transactionData);
 
-    // @ts-expect-error: indexing with noUncheckedIndexedAccess
-    const firstVout: (typeof vout)[number] = vout[0];
-    const firstVoutAddresses = firstVout.addresses!;
-    // @ts-expect-error: indexing with noUncheckedIndexedAccess
-    const toAddress: string = firstVoutAddresses[0];
+    // A contract creation has no recipient, and blockbook serialises `addresses` as null for it, so
+    // there is no address to bump or cancel towards. Returning early keeps enhanceTransaction (and
+    // with it the whole addTransaction batch for the account) from throwing on such a pending tx.
+    const toAddress = vout[0]?.addresses?.[0];
+    if (!toAddress) {
+        return;
+    }
 
     let output;
     switch (txSignature) {
         case 'transfer': {
-            const { tokens } = tx;
-            // @ts-expect-error: indexing with noUncheckedIndexedAccess
-            const token: (typeof tokens)[number] = tokens[0];
+            // A `transfer` call whose token transfer blockbook could not decode (it needs the exact
+            // calldata length) leaves tokens empty, and there is nothing to bump without it.
+            const token = tx.tokens?.[0];
+            if (!token) {
+                return;
+            }
 
             output = {
                 address: token.to,
