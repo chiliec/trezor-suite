@@ -15,3 +15,7 @@ export const createAccountRefreshThrottle = (getState: () => AccountsRefreshTime
     createKeyedThrottle<Account['key']>(MIN_ACCOUNT_REFRESH_INTERVAL, accountKey =>
         selectAccountRefreshTime(getState(), accountKey),
     );
+
+export function isAccountStale(accountLastSuccessfulRefreshTime: number = 0) {
+    return Date.now() - accountLastSuccessfulRefreshTime >= MIN_ACCOUNT_REFRESH_INTERVAL;
+}
