@@ -17,7 +17,6 @@ type WalletParams = {
 export class WalletPage {
     readonly transactionSearch: Locator;
     readonly accountSearch: Locator;
-    readonly walletStakingButton: Locator;
     readonly stakeAddress: Locator;
     readonly walletExtraDropDown: Locator;
     readonly openTradingGlobalButton: Locator;
@@ -77,7 +76,6 @@ export class WalletPage {
     readonly retryLoadingAccount: Locator;
     readonly emptyAccount: Locator;
     readonly buyButton: Locator;
-    readonly sellButton: Locator;
     readonly swapButton: Locator;
     readonly overviewTabButton: Locator;
     readonly deviceConnectedStatus: Locator;
@@ -93,7 +91,6 @@ export class WalletPage {
     constructor(private readonly page: Page) {
         this.transactionSearch = this.page.getByTestId('@wallet/accounts/search-icon');
         this.accountSearch = this.page.getByTestId('@account-menu/search-input');
-        this.walletStakingButton = this.page.getByTestId('@wallet/menu/staking');
         this.stakeAddress = this.page.getByTestId('@cardano/staking/address');
         this.walletExtraDropDown = this.page.getByTestId('@wallet/menu/extra-dropdown');
         this.openTradingGlobalButton = this.page.getByTestId('@wallet/menu/wallet-trading-buy');
@@ -151,7 +148,6 @@ export class WalletPage {
         );
         this.emptyAccount = this.page.getByTestId('@accounts/empty-account');
         this.buyButton = this.page.getByTestId('@accounts/empty-account/buy');
-        this.sellButton = this.page.getByTestId('@trading/menu/wallet-trading-sell');
         this.swapButton = this.page.getByTestId('@trading/menu/wallet-trading-exchange');
         this.overviewTabButton = this.page.getByTestId('@wallet/menu/wallet-overview');
         this.deviceConnectedStatus = this.page
@@ -200,7 +196,7 @@ export class WalletPage {
         ] as WalletParams[];
         for (const account of cardanoAccounts) {
             await this.openAccount(account);
-            await this.walletStakingButton.click();
+            await this.stakingButton.click();
             await expect(this.stakeAddress).toBeVisible();
         }
     }

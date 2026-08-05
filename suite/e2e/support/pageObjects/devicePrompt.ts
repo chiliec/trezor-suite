@@ -54,7 +54,7 @@ export class DevicePrompt {
         this.confirmOnDevicePrompt = page.getByTestId('@prompts/confirm-on-device');
         this.confirmOnDevicePromptSuccess = page.getByTestId('@prompts/confirm-on-device/success');
         this.connectDevicePrompt = page.getByTestId('@connect-device-prompt');
-        this.modalCloseButton = page.getByTestId('@modal/close-button');
+        this.modalCloseButton = page.modalCloseButton;
         this.modal = page.modal;
         this.paginatedText = page.locator("[data-testid-alt='@device-display/paginated-text']");
         this.paginatedTextSeparator = page.getByTestId('@device-display/paginated-text/separator');
@@ -65,7 +65,7 @@ export class DevicePrompt {
         this.assetsReceiveAddress = page.getByTestId('@modal/assets/receive/address');
         this.reviewAmount = page.getByTestId('@modal/transaction-review/amount');
         this.sendButton = page.getByTestId('@modal/send');
-        this.header = page.getByTestId('@modal/header');
+        this.header = page.modalHeader;
         this.headerParagraph = page.getByTestId('@modal/header-paragraph');
         this.acquireDeviceButton = this.page.getByTestId('@device-acquire');
         this.closeButton = this.page.getByTestId('@confirm-on-device/close-button');
