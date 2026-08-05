@@ -1,36 +1,27 @@
 import { getCryptoId } from '@suite-common/trading';
 import { asNetworkSymbol } from '@suite-common/wallet-config';
 
-import { swapQuotesTetherStellar, tradeEndpoint } from '../../fixtures/trading';
 import { expect, test } from '../../support/fixtures';
 
-const sendAmount = swapQuotesTetherStellar[0]?.sendStringAmount ?? '';
+const sendAmount = '9';
 
 test.describe(
     'Trading - Swap token to disabled network asset',
     {
-        tag: ['@webOnly', '@T3W1', '@T3T1'],
+        tag: ['@T3W1', '@T3T1'],
     },
     () => {
         test.use({
             deviceSetup: { mnemonic: 'mnemonic_academic', passphrase_protection: true },
         });
 
-        test.beforeEach(
-            async ({ page, onboardingPage, dashboardPage, walletPage, settingsPage }) => {
-                await test.step('Mocking responses', async () => {
-                    await page.route(tradeEndpoint.swapQuotes, async route => {
-                        await route.fulfill({ json: swapQuotesTetherStellar });
-                    });
-                });
-
-                await onboardingPage.completeOnboarding();
-                await settingsPage.changeNetworks({ enableNetworks: ['sol'] });
-                await dashboardPage.openDeviceSwitcher();
-                await dashboardPage.addHiddenWallet(process.env.PASSPHRASE!);
-                await walletPage.openSwapTrading({ symbol: 'sol' });
-            },
-        );
+        test.beforeEach(async ({ onboardingPage, dashboardPage, walletPage, settingsPage }) => {
+            await onboardingPage.completeOnboarding();
+            await settingsPage.changeNetworks({ enableNetworks: ['sol'] });
+            await dashboardPage.openDeviceSwitcher();
+            await dashboardPage.addHiddenWallet(process.env.PASSPHRASE!);
+            await walletPage.openSwapTrading({ symbol: 'sol' });
+        });
 
         test('Show provider info for disabled network asset XLM', async ({ tradingPage }) => {
             await test.step('Fill in a Swap form with Stellar buy asset', async () => {
