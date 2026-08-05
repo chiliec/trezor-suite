@@ -1009,6 +1009,7 @@ export const messages = {
         },
         addressActions: {
             verify: 'Verify',
+            shareQRCode: 'Share QR code',
         },
         addressCopiedBottomSheet: {
             title: 'Address copied.',

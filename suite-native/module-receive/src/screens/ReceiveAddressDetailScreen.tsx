@@ -25,6 +25,7 @@ import { ReceiveAddressDetails } from '../components/ReceiveAddressDetails';
 import { ReceiveAddressReuseWarning } from '../components/ReceiveAddressReuseWarning';
 import { ReceiveAddressVerificationBottomSheet } from '../components/ReceiveAddressVerificationBottomSheet';
 import { useReceiveAddressCopy } from '../hooks/useReceiveAddressCopy';
+import { useReceiveAddressSharing } from '../hooks/useReceiveAddressSharing';
 import { type ReceiveAddressRootState, selectReceiveAccountAddressByPath } from '../selectors';
 
 type NavigationProp = StackNavigationProps<ReceiveStackParamList, ReceiveStackRoutes>;
@@ -63,6 +64,16 @@ export const ReceiveAddressDetailScreen = () => {
         address: address?.address ?? '',
         onVerifyAddress: handleVerifyAddress,
     });
+    const {
+        sharedAddressBottomSheetRef,
+        closeSharedAddressBottomSheet,
+        handleShareAddress,
+        handleShareQRCode,
+        handleVerifySharedAddress,
+    } = useReceiveAddressSharing({
+        address: address?.address ?? '',
+        onVerifyAddress: handleVerifyAddress,
+    });
 
     if (hasFirmwareAuthenticityCheckHardFailed) {
         return <ReceiveBlockedDeviceCompromisedScreen />;
@@ -94,8 +105,8 @@ export const ReceiveAddressDetailScreen = () => {
                         <ScreenFooterGradient />
                         <VStack paddingHorizontal="sp16" paddingTop="sp8" paddingBottom="sp16">
                             <ReceiveAddressActions
-                                address={address.address}
                                 onCopyAddress={handleCopyAddress}
+                                onShareAddress={handleShareAddress}
                                 onVerifyAddress={handleVerifyAddress}
                             />
                         </VStack>
@@ -110,6 +121,7 @@ export const ReceiveAddressDetailScreen = () => {
                         deviceStaticSessionId={deviceStaticSessionId}
                         networkSymbol={networkSymbol}
                         onCopyAddress={handleCopyAddress}
+                        onShareQRCode={handleShareQRCode}
                     />
                     {isUsed && <ReceiveAddressReuseWarning />}
                 </VStack>
@@ -119,6 +131,12 @@ export const ReceiveAddressDetailScreen = () => {
                 source={ReceiveAddressVerificationSource.Pasted}
                 onVerifyAddress={handleVerifyCopiedAddress}
                 onSkipVerification={closeCopiedAddressBottomSheet}
+            />
+            <ReceiveAddressVerificationBottomSheet
+                ref={sharedAddressBottomSheetRef}
+                source={ReceiveAddressVerificationSource.Shared}
+                onVerifyAddress={handleVerifySharedAddress}
+                onSkipVerification={closeSharedAddressBottomSheet}
             />
         </>
     );

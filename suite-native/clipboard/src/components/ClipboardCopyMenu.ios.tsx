@@ -11,6 +11,7 @@ export const ClipboardCopyMenu = ({
     children,
     copyMessage,
     copyLabel,
+    additionalActions,
     onCopy,
     style,
 }: ClipboardCopyMenuProps) => {
@@ -39,6 +40,9 @@ export const ClipboardCopyMenu = ({
                         label={copyLabel ?? translate('generic.buttons.copy')}
                         onPress={handleCopy}
                     />
+                    {additionalActions?.map(({ label, onPress }) => (
+                        <Button key={label} label={label} onPress={() => void onPress()} />
+                    ))}
                 </ContextMenu.Items>
                 <ContextMenu.Trigger>
                     <RNHostView matchContents>{children}</RNHostView>

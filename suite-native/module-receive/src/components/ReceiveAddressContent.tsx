@@ -26,6 +26,7 @@ import { ReceiveAddressVerificationBottomSheet } from './ReceiveAddressVerificat
 import { ReceiveDestinationTagInfo } from './ReceiveDestinationTagInfo';
 import { ReceiveFreshAddressHeader } from './ReceiveFreshAddressHeader';
 import { useReceiveAddressCopy } from '../hooks/useReceiveAddressCopy';
+import { useReceiveAddressSharing } from '../hooks/useReceiveAddressSharing';
 import { setCurrentFreshAddressForFlowEntryThunk } from '../receiveThunks';
 import { ReceiveBlockedDeviceCompromisedScreen } from '../screens/ReceiveBlockedDeviceCompromisedScreen';
 import { type ReceiveAddressListRootState } from '../selectors';
@@ -87,6 +88,16 @@ export const ReceiveAddressContent = ({
         address: currentFreshAddress?.address ?? '',
         onVerifyAddress: handleVerifyAddress,
     });
+    const {
+        sharedAddressBottomSheetRef,
+        closeSharedAddressBottomSheet,
+        handleShareAddress,
+        handleShareQRCode,
+        handleVerifySharedAddress,
+    } = useReceiveAddressSharing({
+        address: currentFreshAddress?.address ?? '',
+        onVerifyAddress: handleVerifyAddress,
+    });
 
     const hasFirmwareAuthenticityCheckHardFailed = useSelector(
         selectHasFirmwareAuthenticityCheckHardFailedForSelectedDevice,
@@ -122,8 +133,8 @@ export const ReceiveAddressContent = ({
                         <ScreenFooterGradient />
                         <VStack paddingHorizontal="sp16" paddingTop="sp8" paddingBottom="sp16">
                             <ReceiveAddressActions
-                                address={currentFreshAddress.address}
                                 onCopyAddress={handleCopyAddress}
+                                onShareAddress={handleShareAddress}
                                 onVerifyAddress={handleVerifyAddress}
                             />
                         </VStack>
@@ -137,6 +148,7 @@ export const ReceiveAddressContent = ({
                         address={currentFreshAddress.address}
                         tokenContract={tokenContract}
                         onCopyAddress={handleCopyAddress}
+                        onShareQRCode={handleShareQRCode}
                     />
                     <ReceiveDestinationTagInfo
                         accountKey={accountKey}
@@ -149,6 +161,12 @@ export const ReceiveAddressContent = ({
                 source={ReceiveAddressVerificationSource.Pasted}
                 onVerifyAddress={handleVerifyCopiedAddress}
                 onSkipVerification={closeCopiedAddressBottomSheet}
+            />
+            <ReceiveAddressVerificationBottomSheet
+                ref={sharedAddressBottomSheetRef}
+                source={ReceiveAddressVerificationSource.Shared}
+                onVerifyAddress={handleVerifySharedAddress}
+                onSkipVerification={closeSharedAddressBottomSheet}
             />
         </>
     );

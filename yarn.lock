@@ -13631,6 +13631,7 @@ __metadata:
     "@trezor/styles-native": "workspace:*"
     "@trezor/type-utils": "workspace:*"
     "@trezor/urls": "workspace:*"
+    expo-file-system: "npm:~56.0.7"
     react: "npm:19.2.3"
     react-native: "npm:0.85.3"
     react-redux: "npm:9.3.0"
@@ -14029,6 +14030,7 @@ __metadata:
     expo-image-picker: "npm:~56.0.14"
     react: "npm:19.2.3"
     react-native: "npm:0.85.3"
+    react-native-svg: "npm:15.15.5"
     react-qr-code: "npm:2.0.18"
     react-redux: "npm:9.3.0"
   languageName: unknown

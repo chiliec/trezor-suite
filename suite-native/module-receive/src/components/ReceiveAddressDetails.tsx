@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import { useWindowDimensions } from 'react-native';
 
 import type { NetworkSymbol } from '@suite-common/wallet-config';
@@ -7,7 +8,8 @@ import { Box, Card, VStack } from '@suite-native/atoms';
 import { ClipboardCopyMenu } from '@suite-native/clipboard';
 import { AddressFormatter } from '@suite-native/formatters';
 import { TokenIcon } from '@suite-native/icons';
-import { QRCode } from '@suite-native/qr-code';
+import { useTranslate } from '@suite-native/intl';
+import { QRCode, type QRCodeImageRef } from '@suite-native/qr-code';
 import type { StaticSessionId } from '@trezor/connect';
 import { prepareNativeStyle, useNativeStyles } from '@trezor/styles-native';
 
@@ -19,6 +21,7 @@ type ReceiveAddressDetailsProps = {
     tokenContract?: TokenAddress;
     showLabelEdit?: boolean;
     onCopyAddress: () => void;
+    onShareQRCode: (qrCode: QRCodeImageRef | null) => void;
 };
 
 const addressContainer = prepareNativeStyle(() => ({
@@ -40,12 +43,15 @@ export const ReceiveAddressDetails = ({
     tokenContract,
     showLabelEdit = true,
     onCopyAddress,
+    onShareQRCode,
 }: ReceiveAddressDetailsProps) => {
+    const qrCodeRef = useRef<QRCodeImageRef>(null);
     const {
         applyStyle,
         utils: { spacings },
     } = useNativeStyles();
     const { width: windowWidth } = useWindowDimensions();
+    const { translate } = useTranslate();
 
     const screenHorizontalPadding = spacings.sp16 * 2;
     const cardHorizontalMargin = spacings.sp8 * 2;
@@ -53,15 +59,25 @@ export const ReceiveAddressDetails = ({
     const horizontalOffset =
         screenHorizontalPadding + cardHorizontalMargin + qrCodeHorizontalPadding;
     const qrCodeSize = Math.min(MAX_RECEIVE_QR_CODE_SIZE, windowWidth - horizontalOffset);
+    const handleShareQRCode = () => onShareQRCode(qrCodeRef.current);
 
     return (
         <VStack spacing="sp24" flex={1}>
             <Box marginHorizontal="sp8" marginTop="sp8">
-                <ClipboardCopyMenu onCopy={onCopyAddress}>
+                <ClipboardCopyMenu
+                    onCopy={onCopyAddress}
+                    additionalActions={[
+                        {
+                            label: translate('moduleReceive.addressActions.shareQRCode'),
+                            onPress: handleShareQRCode,
+                        },
+                    ]}
+                >
                     <Card noPadding noShadow style={applyStyle(cardStyle)}>
                         <QRCode
                             data={address}
                             qrCodeSize={qrCodeSize}
+                            qrCodeRef={qrCodeRef}
                             paddingHorizontal="sp16"
                             paddingVertical="sp16"
                             centerIcon={
