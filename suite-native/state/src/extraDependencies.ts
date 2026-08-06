@@ -24,7 +24,6 @@ import {
 } from '@suite-common/redux-utils';
 import { createMigrateSuiteSyncLabelsForRbfTransactionCompositionRoot } from '@suite-common/suite-rbf-labels-migrations';
 import { selectAllLabelsForAccount, selectIsSuiteSyncEnabled } from '@suite-common/suite-sync';
-import { createAccountRefreshThrottle } from '@suite-common/wallet-core';
 import { analytics } from '@suite-native/analytics';
 import { forgetBluetoothDeviceThunk } from '@suite-native/bluetooth';
 import { selectTokenDefinitionsEnabledNetworks } from '@suite-native/discovery';
@@ -144,7 +143,6 @@ export const createNativeCompositionRoot = (deps: NativeAppDeps): NativeServices
                         return new NativeBluetoothTransport({ id: 'native-bluetooth', logger });
                 }
             }),
-        accountRefreshThrottle: createAccountRefreshThrottle(deps.getState),
         getLanguage: toGetter(deps.getState, selectSupportedLanguageLocale),
         getTokenDefinitionsEnabledNetworks: toGetter(
             deps.getState,

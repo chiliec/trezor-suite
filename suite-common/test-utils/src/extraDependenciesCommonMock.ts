@@ -27,7 +27,6 @@ import { type SelectedAccountLoaded, asAccountDescriptor } from '@suite-common/w
 import { mockWalletAccount } from '@suite-common/wallet-types/mocks';
 import { mockAnalytics } from '@trezor/analytics-uploader/mocks';
 import { err, ok } from '@trezor/type-utils';
-import { createKeyedThrottle } from '@trezor/utils';
 
 const suiteSyncMock: SuiteSync = {
     changeRelayUrl: () => Promise.resolve(),
@@ -113,7 +112,6 @@ export const extraDependenciesCommonMock: ExtraDependencies = {
         connectInitSettings,
         connectInitHooks: { deviceEvent: {}, uiEvent: {} },
         createTransports: () => [],
-        accountRefreshThrottle: createKeyedThrottle(10_000, () => undefined),
         migrateSuiteSyncLabelsForRbfTransaction: () => Promise.resolve([[], []]),
         getTokenDefinitionsEnabledNetworks: notImplementedGetter(
             'getTokenDefinitionsEnabledNetworks',

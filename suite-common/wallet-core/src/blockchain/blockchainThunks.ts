@@ -42,23 +42,25 @@ import { fetchAndUpdateAccountThunk, reportWalletBalanceThunk } from '../account
 import { preloadFeeInfoThunk } from '../fees/feesThunks';
 import { selectBitcoinAmountUnit } from '../settings/walletSettingsReducer';
 
-export const DEFAULT_ACCOUNT_SYNC_INTERVAL = 60 * 1000; // 1 minute
+export const DEFAULT_NETWORK_SYNC_INTERVAL = 60 * 1000; // 1 minute
 
-const CUSTOM_ACCOUNT_SYNC_INTERVALS: Partial<Record<NetworkSymbol, number>> = {
-    bsc: DEFAULT_ACCOUNT_SYNC_INTERVAL / 1.5,
-    pol: DEFAULT_ACCOUNT_SYNC_INTERVAL / 1.5,
-    op: DEFAULT_ACCOUNT_SYNC_INTERVAL / 1.5,
-    base: DEFAULT_ACCOUNT_SYNC_INTERVAL / 1.5,
-    arb: DEFAULT_ACCOUNT_SYNC_INTERVAL / 1.5,
-    avax: DEFAULT_ACCOUNT_SYNC_INTERVAL / 1.5,
-    trx: DEFAULT_ACCOUNT_SYNC_INTERVAL / 1.5,
-    rhc: DEFAULT_ACCOUNT_SYNC_INTERVAL / 1.5,
-    hype: DEFAULT_ACCOUNT_SYNC_INTERVAL / 1.5,
-    sol: DEFAULT_ACCOUNT_SYNC_INTERVAL * 5,
+const NETWORK_SYNC_INTERVALS: Partial<Record<NetworkSymbol, number>> = {
+    bsc: DEFAULT_NETWORK_SYNC_INTERVAL / 1.5,
+    pol: DEFAULT_NETWORK_SYNC_INTERVAL / 1.5,
+    op: DEFAULT_NETWORK_SYNC_INTERVAL / 1.5,
+    base: DEFAULT_NETWORK_SYNC_INTERVAL / 1.5,
+    arb: DEFAULT_NETWORK_SYNC_INTERVAL / 1.5,
+    avax: DEFAULT_NETWORK_SYNC_INTERVAL / 1.5,
+    trx: DEFAULT_NETWORK_SYNC_INTERVAL / 1.5,
+    rhc: DEFAULT_NETWORK_SYNC_INTERVAL / 1.5,
+    hype: DEFAULT_NETWORK_SYNC_INTERVAL / 1.5,
+    sol: DEFAULT_NETWORK_SYNC_INTERVAL * 5,
 };
 
-const getAccountSyncInterval = (symbol: NetworkSymbol) =>
-    CUSTOM_ACCOUNT_SYNC_INTERVALS[symbol] || DEFAULT_ACCOUNT_SYNC_INTERVAL;
+const getNetworkSyncInterval = (
+    symbol: NetworkSymbol,
+    defaultInterval: number = DEFAULT_NETWORK_SYNC_INTERVAL,
+) => NETWORK_SYNC_INTERVALS[symbol] ?? defaultInterval;
 
 // call TrezorConnect.unsubscribe, it doesn't cost anything and should emit BLOCKCHAIN.CONNECT or BLOCKCHAIN.ERROR event
 export const reconnectBlockchainThunk = createThunk(
@@ -264,7 +266,7 @@ export const syncAccountsWithBlockchainThunk = createThunk(
 
         const timeout = setTimeout(
             () => dispatch(syncAccountsWithBlockchainThunk(symbol)),
-            getAccountSyncInterval(symbol),
+            getNetworkSyncInterval(symbol),
         );
 
         dispatch(blockchainActions.synced({ symbol, timeout }));
@@ -418,7 +420,7 @@ export const onBlockchainDisconnectThunk = createThunk(
         if (!blockchain.syncTimeout) {
             const timeout = setTimeout(
                 () => dispatch(syncAccountsWithBlockchainThunk(symbol)),
-                getAccountSyncInterval(symbol),
+                getNetworkSyncInterval(symbol),
             );
             dispatch(blockchainActions.synced({ symbol, timeout }));
         }

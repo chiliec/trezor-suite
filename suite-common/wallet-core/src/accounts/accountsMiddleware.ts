@@ -1,10 +1,11 @@
 import { createMiddlewareWithExtraDeps } from '@suite-common/redux-utils';
 
 import { accountsActions } from './accountsActions';
+import { isAccountStaleSelector } from './accountsRefreshTimeReducer';
 import { fetchAndUpdateAccountThunk } from './accountsThunks';
 
 export const prepareAccountsMiddleware = createMiddlewareWithExtraDeps(
-    (action, { dispatch, next, extra }) => {
+    (action, { dispatch, next, getState }) => {
         // propagate action to reducers (the accountsRefreshTime slice records the refresh timestamp
         // off the account entity, reacting to createAccount/updateAccount/removeAccount)
         next(action);
@@ -15,10 +16,7 @@ export const prepareAccountsMiddleware = createMiddlewareWithExtraDeps(
         ) {
             const accountKey = action.payload.account.key;
 
-            // Refresh the selected account on enter, throttled to once per interval per account.
-            // canRun reads the timestamp from the store, so this no longer mutates (and re-renders)
-            // the account every time.
-            if (extra.services.accountRefreshThrottle.canRun(accountKey)) {
+            if (isAccountStaleSelector(getState(), accountKey)) {
                 dispatch(fetchAndUpdateAccountThunk({ accountKey }));
             }
         }
