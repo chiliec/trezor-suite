@@ -16353,7 +16353,7 @@ __metadata:
     "@trezor/type-utils": "workspace:*"
     "@trezor/utils": "workspace:*"
     "@trezor/utxo-lib": "workspace:*"
-    "@types/chrome": "npm:^0.1.40"
+    "@types/chrome": "npm:^0.2.2"
     "@types/jest": "npm:30.0.0"
     "@types/node": "npm:22.13.10"
   peerDependencies:
@@ -16365,7 +16365,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@trezor/connect-data@workspace:packages/connect-data"
   dependencies:
-    "@types/chrome": "npm:^0.1.40"
+    "@types/chrome": "npm:^0.2.2"
     "@types/jest": "npm:30.0.0"
     "@types/node": "npm:22.13.10"
   peerDependencies:
@@ -16449,7 +16449,7 @@ __metadata:
     "@trezor/theme": "workspace:^"
     "@trezor/urls": "workspace:^"
     "@trezor/utils": "workspace:^"
-    "@types/chrome": "npm:^0.1.40"
+    "@types/chrome": "npm:^0.2.2"
     "@types/node": "npm:22.13.10"
     "@types/redux-logger": "npm:^3.0.13"
     "@types/web": "npm:^0.0.345"
@@ -16524,7 +16524,7 @@ __metadata:
     "@trezor/type-utils": "workspace:*"
     "@trezor/utils": "workspace:*"
     "@trezor/websocket-client": "workspace:*"
-    "@types/chrome": "npm:^0.1.40"
+    "@types/chrome": "npm:^0.2.2"
     "@types/jest": "npm:30.0.0"
     "@types/w3c-web-usb": "npm:^1.0.14"
     "@types/web": "npm:^0.0.345"
@@ -16542,7 +16542,7 @@ __metadata:
     "@trezor/connect-common": "workspace:*"
     "@trezor/connect-web": "workspace:*"
     "@trezor/eslint": "workspace:*"
-    "@types/chrome": "npm:^0.1.40"
+    "@types/chrome": "npm:^0.2.2"
     "@types/w3c-web-usb": "npm:^1.0.14"
     babel-loader: "npm:^10.1.1"
     rimraf: "npm:^6.1.2"
@@ -17777,7 +17777,7 @@ __metadata:
   dependencies:
     "@trezor/connect-webextension": "workspace:^"
     "@trezor/eslint": "workspace:^"
-    "@types/chrome": "npm:^0.1.40"
+    "@types/chrome": "npm:^0.2.2"
     copy-webpack-plugin: "npm:^14.0.0"
     html-webpack-plugin: "npm:5.6.7"
     webpack: "npm:5.108.1"
@@ -17963,13 +17963,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/chrome@npm:^0.1.40":
-  version: 0.1.40
-  resolution: "@types/chrome@npm:0.1.40"
+"@types/chrome@npm:^0.2.2":
+  version: 0.2.2
+  resolution: "@types/chrome@npm:0.2.2"
   dependencies:
     "@types/filesystem": "npm:*"
     "@types/har-format": "npm:*"
-  checksum: 10/2e909134a18c03c623b87aaca909b1f86f80973cc21ed1660283efb99bda9c33194d83f409c671eb0cfa78aa4b0d3d8f61d62365a1b96100975b95f3ceb1b364
+  checksum: 10/1096af177cc8e3a051834e85869f9f2a06f55362e34e81bbb3329c2b680f6c3176b5316fe8d1f09d56b65f7302384ecd3103aca03de2fcff76043b524c9e6b74
   languageName: node
   linkType: hard
 
