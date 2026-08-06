@@ -978,9 +978,8 @@ const getEthereumRbfParams = (
 
     const txSignature = getEvmTransactionTextSignature(transactionData);
 
-    // A contract creation has no recipient, and blockbook serialises `addresses` as null for it, so
-    // there is no address to bump or cancel towards. Returning early keeps enhanceTransaction (and
-    // with it the whole addTransaction batch for the account) from throwing on such a pending tx.
+    // A contract creation has no recipient (blockbook serialises `addresses` as null), so there is
+    // no address to bump or cancel towards.
     const toAddress = vout[0]?.addresses?.[0];
     if (!toAddress) {
         return;
@@ -989,8 +988,8 @@ const getEthereumRbfParams = (
     let output;
     switch (txSignature) {
         case 'transfer': {
-            // A `transfer` call whose token transfer blockbook could not decode (it needs the exact
-            // calldata length) leaves tokens empty, and there is nothing to bump without it.
+            // A `transfer` whose token transfer blockbook did not decode leaves `tokens` empty, and
+            // there is nothing to bump without it.
             const token = tx.tokens?.[0];
             if (!token) {
                 return;

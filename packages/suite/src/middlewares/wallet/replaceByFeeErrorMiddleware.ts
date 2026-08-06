@@ -30,9 +30,8 @@ export const replaceByFeeErrorMiddleware =
 
         const addedTransaction = transactions.find(tx => tx.txid === precomposedTx.prevTxid);
 
-        // blockHeight is always present and 0 for a mempool tx, so `!== undefined` also matched a
-        // still-PENDING predecessor - showing "already mined" and cancelling the replacement that is
-        // in flight. Only a mined predecessor may abort the replacement.
+        // Blockbook sends blockHeight 0 for a mempool tx, so a `!== undefined` check also matched a
+        // still-pending predecessor. Only a mined one may abort the replacement.
         if (addedTransaction && !isPending(addedTransaction)) {
             api.dispatch(replaceByFeeErrorThunk());
         }
