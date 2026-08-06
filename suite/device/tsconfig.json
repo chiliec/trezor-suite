@@ -9,17 +9,6 @@
         {
             "path": "../../suite-common/suite-types"
         },
-        {
-            "path": "../../suite-common/wallet-core"
-        },
-        { "path": "../locks" },
-        { "path": "../router" },
-        { "path": "../../packages/connect" },
-        {
-            "path": "../../suite-common/redux-extra-dependencies"
-        },
-        {
-            "path": "../../suite-common/test-utils"
-        }
+        { "path": "../locks" }
     ]
 }

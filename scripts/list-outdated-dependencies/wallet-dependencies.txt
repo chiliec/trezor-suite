@@ -21,7 +21,6 @@
 @testing-library/react-native
 @testing-library/user-event
 @types/redux-logger
-@types/redux-mock-store
 @whatwg-node/events
 abortcontroller-polyfill
 ajv
@@ -40,7 +39,6 @@ react-refresh
 react-use
 redux
 redux-logger
-redux-mock-store
 react-native-quick-crypto
 react-native-tcp-socket
 redux-persist

@@ -4,12 +4,18 @@ import {
     type BluetoothDeviceCommon,
     prepareBluetoothReducerCreator,
 } from '@suite-common/bluetooth';
-import { prepareDeviceReducer } from '@suite-common/device';
-import { configureMockStore, extraDependenciesCommonMock } from '@suite-common/test-utils';
+import { deviceActions, prepareDeviceReducer } from '@suite-common/device';
+import {
+    configureMockStore,
+    extraDependenciesCommonMock,
+    filterThunkActionTypes,
+} from '@suite-common/test-utils';
 import { prepareThpReducer } from '@suite-common/thp';
+import { DEVICE } from '@trezor/connect';
 
 import { forgetPersistentDataPreloadedStateFixture } from './__fixtures__/forgetPersistentDataPreloadedState';
-import { forgetDevicePersistentDataThunk } from './deviceThunks';
+import { handleDeviceDisconnectFixture } from './__fixtures__/handleDeviceDisconnect';
+import { forgetDevicePersistentDataThunk, handleDeviceDisconnect } from './deviceThunks';
 
 const deviceReducer = prepareDeviceReducer(extraDependenciesCommonMock);
 const bluetoothReducer = prepareBluetoothReducerCreator<BluetoothDeviceCommon>()(
@@ -25,6 +31,29 @@ const initStore = () =>
             thp: thpReducer,
         }),
         preloadedState: forgetPersistentDataPreloadedStateFixture,
+    });
+
+type DisconnectState = {
+    device: ReturnType<typeof deviceReducer>;
+};
+
+const EMPTY_ACTION = { type: 'foo' };
+
+const getDisconnectInitialState = (state?: {
+    device?: Partial<ReturnType<typeof deviceReducer>>;
+}): DisconnectState => ({
+    device: {
+        ...deviceReducer(undefined, EMPTY_ACTION),
+        ...state?.device,
+    },
+});
+
+const initDisconnectStore = (state: DisconnectState) =>
+    configureMockStore({
+        reducer: combineReducers({
+            device: deviceReducer,
+        }),
+        preloadedState: state,
     });
 
 describe(forgetDevicePersistentDataThunk.name, () => {
@@ -75,5 +104,33 @@ describe(forgetDevicePersistentDataThunk.name, () => {
         await store.dispatch(forgetDevicePersistentDataThunk({ deviceId: 'device-id-4' }));
         const state = store.getState();
         expect(state).toEqual(forgetPersistentDataPreloadedStateFixture);
+    });
+});
+
+describe(handleDeviceDisconnect.name, () => {
+    handleDeviceDisconnectFixture.forEach(fixture => {
+        it(`handleDeviceDisconnect: ${fixture.description}`, async () => {
+            const state = getDisconnectInitialState(fixture.state);
+            const store = initDisconnectStore(state);
+
+            store.dispatch({
+                type: DEVICE.DISCONNECT,
+                payload: fixture.device,
+            });
+            await store.dispatch(handleDeviceDisconnect(fixture.device));
+
+            const actions = filterThunkActionTypes(store.getActions());
+
+            if (!fixture.result) {
+                expect(actions.pop()?.type).toEqual(deviceActions.deviceDisconnect.type);
+            } else {
+                const action = actions.pop();
+
+                if (fixture.result.type) {
+                    expect(action?.type).toEqual(fixture.result.type);
+                }
+                expect(action?.payload).toEqual(fixture.result.payload);
+            }
+        });
     });
 });
