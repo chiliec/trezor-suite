@@ -42,12 +42,13 @@ export const AccountsScreen = ({ navigation, route }: ScreenNavigationProps) => 
     };
 
     return (
-        <Screen header={<DeviceManagerScreenHeader />}>
+        <Screen header={<DeviceManagerScreenHeader />} isScrollable={false}>
             <AccountsListWithFilter
                 title={<Translation id="moduleAccountManagement.accountsScreen.title" />}
                 onSelectAccount={handleSelectAccount}
                 flowType="accounts"
                 networksFilter={networksFilter}
+                isScrollDividerEnabled
             >
                 <AccountsRediscoveryNeededWarning />
             </AccountsListWithFilter>
