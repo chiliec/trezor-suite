@@ -979,7 +979,7 @@ const getEthereumRbfParams = (
     const txSignature = getEvmTransactionTextSignature(transactionData);
 
     // A contract creation has no recipient (blockbook serialises `addresses` as null), so there is
-    // no address to bump or cancel towards.
+    // nothing to build a replacement output from.
     const toAddress = vout[0]?.addresses?.[0];
     if (!toAddress) {
         return;
@@ -1032,10 +1032,16 @@ const getEthereumRbfParams = (
                     ),
                 };
             } else {
+                // The same crash class as the guards above: a missing value would throw in
+                // formatNetworkAmount and fail the account's whole addTransaction batch.
+                const value = vout[0]?.value;
+                if (!value) {
+                    return;
+                }
                 output = {
                     address: toAddress,
-                    amount: vout[0]!.value!,
-                    formattedAmount: formatNetworkAmount(vout[0]!.value!, account.symbol),
+                    amount: value,
+                    formattedAmount: formatNetworkAmount(value, account.symbol),
                 };
             }
         }
