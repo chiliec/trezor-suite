@@ -128,6 +128,15 @@ const getPlugins = (): ExpoPlugins => {
                 microphonePermission: false,
             },
         ],
+        [
+            'expo-media-library',
+            {
+                photosPermission: false,
+                savePhotosPermission:
+                    'Allow $(PRODUCT_NAME) to save QR code images to your photos.',
+                granularPermissions: ['photo'],
+            },
+        ],
         ['expo-video'],
         [
             'expo-build-properties',

@@ -1,12 +1,6 @@
-import {
-    type ForwardRefExoticComponent,
-    type ReactElement,
-    type Ref,
-    type RefAttributes,
-} from 'react';
+import { type ReactElement } from 'react';
 import { Dimensions, View } from 'react-native';
-import type Svg from 'react-native-svg';
-import ReactQRCode, { type QRCodeProps as ReactQRCodeProps } from 'react-qr-code';
+import ReactQRCode from 'react-qr-code';
 
 import { Box, nativeSpacingToNumber } from '@suite-native/atoms';
 import { prepareNativeStyle, useNativeStyles } from '@trezor/styles-native';
@@ -18,14 +12,7 @@ type QRCodeProps = {
     paddingHorizontal?: NativeSpacing;
     paddingVertical?: NativeSpacing;
     centerIcon?: ReactElement;
-    qrCodeRef?: Ref<QRCodeImageRef>;
 };
-
-export type QRCodeImageRef = Pick<Svg, 'toDataURL'>;
-
-const ReactQRCodeWithRef = ReactQRCode as unknown as ForwardRefExoticComponent<
-    ReactQRCodeProps & RefAttributes<QRCodeImageRef>
->;
 
 const SCREEN_WIDTH = Dimensions.get('screen').width;
 
@@ -80,7 +67,6 @@ export const QRCode = ({
     paddingHorizontal,
     paddingVertical,
     centerIcon,
-    qrCodeRef,
 }: QRCodeProps) => {
     const { applyStyle } = useNativeStyles();
 
@@ -97,11 +83,10 @@ export const QRCode = ({
                     paddingHorizontal: horizontalPadding,
                 })}
             >
-                <ReactQRCodeWithRef
+                <ReactQRCode
                     bgColor={colorVariants.standard.surfaceFillRaised}
                     fgColor={colorVariants.standard.elementFillContrast}
                     level={hasCenterIcon ? 'H' : 'Q'}
-                    ref={qrCodeRef}
                     size={qrCodeSize}
                     value={data}
                 />

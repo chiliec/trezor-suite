@@ -1,3 +1,4 @@
+import { type ViewShotRef } from 'react-native-view-shot';
 import { useSelector } from 'react-redux';
 
 import { getNetwork } from '@suite-common/wallet-config';
@@ -10,7 +11,6 @@ import {
 import { type AccountKey, type TokenAddress } from '@suite-common/wallet-types';
 import { Box, InlineAlertBox, type InlineAlertBoxProps, VStack } from '@suite-native/atoms';
 import { Translation } from '@suite-native/intl';
-import { type QRCodeImageRef } from '@suite-native/qr-code';
 
 import { ReceiveAddressDetails } from './ReceiveAddressDetails';
 
@@ -19,7 +19,9 @@ type ReceiveAddressCardProps = {
     address: string;
     tokenContract?: TokenAddress;
     onCopyAddress: () => void;
-    onShareQRCode: (qrCode: QRCodeImageRef | null) => void;
+    onCopyQRCode: (qrCodeView: ViewShotRef | null) => void;
+    onSaveQRCode: (qrCodeView: ViewShotRef | null) => void;
+    onShareQRCode: (qrCodeView: ViewShotRef | null) => void;
 };
 
 export const ReceiveAddressCard = ({
@@ -27,6 +29,8 @@ export const ReceiveAddressCard = ({
     address,
     tokenContract,
     onCopyAddress,
+    onCopyQRCode,
+    onSaveQRCode,
     onShareQRCode,
 }: ReceiveAddressCardProps) => {
     const accountDescriptor = useSelector((state: AccountsRootState) =>
@@ -82,6 +86,8 @@ export const ReceiveAddressCard = ({
                 tokenContract={tokenContract}
                 showLabelEdit={!isTokenAddress}
                 onCopyAddress={onCopyAddress}
+                onCopyQRCode={onCopyQRCode}
+                onSaveQRCode={onSaveQRCode}
                 onShareQRCode={onShareQRCode}
             />
             {cardAlertProps && (

@@ -91,8 +91,10 @@ export const ReceiveAddressContent = ({
     const {
         sharedAddressBottomSheetRef,
         closeSharedAddressBottomSheet,
+        handleCopyQRCode,
         handleShareAddress,
         handleShareQRCode,
+        handleSaveQRCode,
         handleVerifySharedAddress,
     } = useReceiveAddressSharing({
         address: currentFreshAddress?.address ?? '',
@@ -148,6 +150,8 @@ export const ReceiveAddressContent = ({
                         address={currentFreshAddress.address}
                         tokenContract={tokenContract}
                         onCopyAddress={handleCopyAddress}
+                        onCopyQRCode={handleCopyQRCode}
+                        onSaveQRCode={handleSaveQRCode}
                         onShareQRCode={handleShareQRCode}
                     />
                     <ReceiveDestinationTagInfo

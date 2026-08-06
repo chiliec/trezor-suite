@@ -67,8 +67,10 @@ export const ReceiveAddressDetailScreen = () => {
     const {
         sharedAddressBottomSheetRef,
         closeSharedAddressBottomSheet,
+        handleCopyQRCode,
         handleShareAddress,
         handleShareQRCode,
+        handleSaveQRCode,
         handleVerifySharedAddress,
     } = useReceiveAddressSharing({
         address: address?.address ?? '',
@@ -121,6 +123,8 @@ export const ReceiveAddressDetailScreen = () => {
                         deviceStaticSessionId={deviceStaticSessionId}
                         networkSymbol={networkSymbol}
                         onCopyAddress={handleCopyAddress}
+                        onCopyQRCode={handleCopyQRCode}
+                        onSaveQRCode={handleSaveQRCode}
                         onShareQRCode={handleShareQRCode}
                     />
                     {isUsed && <ReceiveAddressReuseWarning />}

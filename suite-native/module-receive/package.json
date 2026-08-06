@@ -50,9 +50,11 @@
         "@trezor/styles-native": "workspace:*",
         "@trezor/type-utils": "workspace:*",
         "@trezor/urls": "workspace:*",
-        "expo-file-system": "~56.0.7",
+        "expo-clipboard": "~56.0.3",
+        "expo-media-library": "56.0.6",
         "react": "19.2.3",
         "react-native": "0.85.3",
+        "react-native-view-shot": "5.1.1",
         "react-redux": "9.3.0"
     },
     "devDependencies": {

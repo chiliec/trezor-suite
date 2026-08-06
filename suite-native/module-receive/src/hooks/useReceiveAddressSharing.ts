@@ -1,32 +1,48 @@
 import { useCallback } from 'react';
 import { Alert, Share } from 'react-native';
+import { type ViewShotRef, captureRef } from 'react-native-view-shot';
 
-import { EncodingType, File, Paths } from 'expo-file-system';
+import * as Clipboard from 'expo-clipboard';
 
 import { useBottomSheetModal } from '@suite-native/atoms';
 import { useTranslate } from '@suite-native/intl';
 import { ReceiveAddressVerificationSource } from '@suite-native/navigation';
-import { type QRCodeImageRef } from '@suite-native/qr-code';
 
 type UseReceiveAddressSharingParams = {
     address: string;
     onVerifyAddress: (source: ReceiveAddressVerificationSource) => void;
 };
 
-const SHARED_QR_CODE_FILE_NAME = 'trezor-receive-address-qr.png';
+const getShareableFileURI = (uri: string): string =>
+    uri.startsWith('file://') ? uri : `file://${uri}`;
 
-const getQRCodeImageBase64 = (qrCode: QRCodeImageRef): Promise<string> =>
-    new Promise(resolve => {
-        qrCode.toDataURL(resolve);
+const captureQRCodeImageURI = (qrCodeView: ViewShotRef): Promise<string> =>
+    captureRef(qrCodeView, {
+        fileName: 'trezor-receive-address-qr',
+        format: 'png',
+        result: 'tmpfile',
     });
 
-const createQRCodeImageFile = (base64Image: string): File => {
-    const file = new File(Paths.cache, SHARED_QR_CODE_FILE_NAME);
+const captureQRCodeImageBase64 = (qrCodeView: ViewShotRef): Promise<string> =>
+    captureRef(qrCodeView, {
+        format: 'png',
+        result: 'base64',
+    });
 
-    file.create({ overwrite: true });
-    file.write(base64Image, { encoding: EncodingType.Base64 });
+const saveQRCodeImageToPhotos = async (qrCodeView: ViewShotRef): Promise<void> => {
+    // The `legacy` entry point is used intentionally: `saveToLibraryAsync` only requires
+    // add-only ("write") photo permission, while the current `Asset.create` API needs full
+    // library access, which the app does not request.
+    const MediaLibrary = await import('expo-media-library/legacy');
+    const permission = await MediaLibrary.requestPermissionsAsync(true);
 
-    return file;
+    if (!permission.granted) {
+        return;
+    }
+
+    const qrCodeImageURI = await captureQRCodeImageURI(qrCodeView);
+
+    await MediaLibrary.saveToLibraryAsync(getShareableFileURI(qrCodeImageURI));
 };
 
 export const useReceiveAddressSharing = ({
@@ -45,55 +61,84 @@ export const useReceiveAddressSharing = ({
         onVerifyAddress(ReceiveAddressVerificationSource.Shared);
     }, [closeSharedAddressBottomSheet, onVerifyAddress]);
 
-    const shareReceiveAddress = useCallback(
-        async (content: Parameters<typeof Share.share>[0]) => {
-            const { action } = await Share.share(content);
+    const handleShareAddress = useCallback(async () => {
+        try {
+            const { action } = await Share.share({ message: address });
 
             if (action === Share.dismissedAction) {
                 return;
             }
 
             openSharedAddressBottomSheet();
-        },
-        [openSharedAddressBottomSheet],
-    );
-
-    const handleShareAddress = useCallback(async () => {
-        try {
-            await shareReceiveAddress({ message: address });
         } catch {
             Alert.alert(translate('generic.unknownError'));
         }
-    }, [address, shareReceiveAddress, translate]);
+    }, [address, openSharedAddressBottomSheet, translate]);
 
     const handleShareQRCode = useCallback(
-        async (qrCode: QRCodeImageRef | null) => {
-            if (qrCode === null) {
+        async (qrCodeView: ViewShotRef | null) => {
+            if (qrCodeView === null) {
                 Alert.alert(translate('generic.unknownError'));
 
                 return;
             }
 
             try {
-                const base64Image = await getQRCodeImageBase64(qrCode);
-                const file = createQRCodeImageFile(base64Image);
+                const qrCodeImageURI = await captureQRCodeImageURI(qrCodeView);
 
-                await shareReceiveAddress({
-                    url: file.uri,
-                    title: translate('moduleReceive.addressActions.shareQRCode'),
+                await Share.share({
+                    url: getShareableFileURI(qrCodeImageURI),
+                    title: translate('moduleReceive.addressActions.shareQRCodeImage'),
                 });
             } catch {
                 Alert.alert(translate('generic.unknownError'));
             }
         },
-        [shareReceiveAddress, translate],
+        [translate],
+    );
+
+    const handleCopyQRCode = useCallback(
+        async (qrCodeView: ViewShotRef | null) => {
+            if (qrCodeView === null) {
+                Alert.alert(translate('generic.unknownError'));
+
+                return;
+            }
+
+            try {
+                const qrCodeImageBase64 = await captureQRCodeImageBase64(qrCodeView);
+                await Clipboard.setImageAsync(qrCodeImageBase64);
+            } catch {
+                Alert.alert(translate('generic.unknownError'));
+            }
+        },
+        [translate],
+    );
+
+    const handleSaveQRCode = useCallback(
+        async (qrCodeView: ViewShotRef | null) => {
+            if (qrCodeView === null) {
+                Alert.alert(translate('generic.unknownError'));
+
+                return;
+            }
+
+            try {
+                await saveQRCodeImageToPhotos(qrCodeView);
+            } catch {
+                Alert.alert(translate('generic.unknownError'));
+            }
+        },
+        [translate],
     );
 
     return {
         sharedAddressBottomSheetRef,
         closeSharedAddressBottomSheet,
+        handleCopyQRCode,
         handleShareAddress,
         handleShareQRCode,
+        handleSaveQRCode,
         handleVerifySharedAddress,
     };
 };
