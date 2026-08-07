@@ -31,12 +31,6 @@ const rowStyle = prepareNativeStyle<{
             },
         },
         {
-            condition: isFirst && isLast,
-            style: {
-                ...utils.boxShadows.small,
-            },
-        },
-        {
             condition: hasBottomSpacing,
             style: {
                 marginBottom: utils.spacings.sp16,
