@@ -7,6 +7,7 @@ import { geolocationInitialState } from '@suite-common/geolocation';
 import { messageSystemInitialState } from '@suite-common/message-system';
 import { initialSuiteSyncDataState, initialSuiteSyncState } from '@suite-common/suite-sync';
 import { configureMockStore, extraDependenciesCommonMock } from '@suite-common/test-utils';
+import { tokenDefinitionsInitialState } from '@suite-common/token-definitions';
 import {
     formDraftReducer,
     initialWalletSettingsState,
@@ -48,6 +49,7 @@ const createBaseTradingPreloadedState = (tradeType: TradingTestTradeType) => ({
     messageSystem: messageSystemInitialState,
     suiteSync: initialSuiteSyncState,
     suiteSyncData: initialSuiteSyncDataState,
+    tokenDefinitions: tokenDefinitionsInitialState,
     wallet: {
         ...getWalletState({ tradeType }),
         fees: {},
@@ -111,6 +113,7 @@ export const createTradingLightStore = (args?: {
         messageSystem: createStaticReducer(preloadedState.messageSystem),
         suiteSync: createStaticReducer(preloadedState.suiteSync),
         suiteSyncData: createStaticReducer(preloadedState.suiteSyncData),
+        tokenDefinitions: createStaticReducer(preloadedState.tokenDefinitions),
         wallet: combineReducers({
             settings: createStaticReducer(
                 preloadedState.wallet.settings ?? initialWalletSettingsState,

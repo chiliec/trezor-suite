@@ -1,7 +1,10 @@
-import { selectSelectedDevice } from '@suite-common/device';
+import { type DeviceRootState, selectSelectedDevice } from '@suite-common/device';
 import { buildStablecoinYieldTransactionReview } from '@suite-common/earn-stablecoin/src/signing';
 import { createThunk } from '@suite-common/redux-utils';
 import {
+    type SynchronizeSentTransactionThunkDeps,
+    type SynchronizeSentTransactionThunkState,
+    type WalletSettingsRootState,
     type YieldFlowDisplayToken,
     selectAddressDisplayType,
     synchronizeSentTransactionThunk,
@@ -49,6 +52,8 @@ type PushWrappedNativeTokenPayload = {
     signedTransaction: SignedWrappedNativeTokenTransaction;
 };
 
+export type SignWrappedNativeTokenThunkState = DeviceRootState & WalletSettingsRootState;
+
 /**
  * Signs a composed wrap/unwrap transaction on the device. Unlike the yield action review thunks,
  * it is session-less — the standalone wrapped-native flows have no vault, so all inputs are
@@ -58,7 +63,7 @@ type PushWrappedNativeTokenPayload = {
 export const signWrappedNativeTokenThunk = createThunk<
     SignedWrappedNativeTokenTransaction,
     SignWrappedNativeTokenPayload,
-    { rejectValue: WrappedNativeTokenSignError }
+    { rejectValue: WrappedNativeTokenSignError; state: SignWrappedNativeTokenThunkState }
 >(
     `${WRAPPED_NATIVE_TOKEN_THUNK_PREFIX}/sign`,
     async ({ account, token, amount, unsignedTransaction }, { getState, rejectWithValue }) => {
@@ -117,10 +122,17 @@ export const signWrappedNativeTokenThunk = createThunk<
     },
 );
 
+export type PushWrappedNativeTokenThunkState = SynchronizeSentTransactionThunkState;
+export type PushWrappedNativeTokenThunkDeps = SynchronizeSentTransactionThunkDeps;
+
 export const pushWrappedNativeTokenThunk = createThunk<
     { txid: string },
     PushWrappedNativeTokenPayload,
-    { rejectValue: WrappedNativeTokenPushError }
+    {
+        rejectValue: WrappedNativeTokenPushError;
+        state: PushWrappedNativeTokenThunkState;
+        extra: PushWrappedNativeTokenThunkDeps;
+    }
 >(
     `${WRAPPED_NATIVE_TOKEN_THUNK_PREFIX}/push`,
     async ({ account, signedTransaction }, { dispatch, rejectWithValue }) => {

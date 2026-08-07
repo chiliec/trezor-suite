@@ -1,7 +1,11 @@
-import { selectSelectedDevice } from '@suite-common/device';
+import { type DeviceRootState, selectSelectedDevice } from '@suite-common/device';
 import { buildStablecoinYieldTransactionReview } from '@suite-common/earn-stablecoin/src/signing';
 import { createThunk } from '@suite-common/redux-utils';
 import {
+    type StablecoinYieldRootState,
+    type SynchronizeSentTransactionThunkDeps,
+    type SynchronizeSentTransactionThunkState,
+    type WalletSettingsRootState,
     type YieldFlowDisplayToken,
     type YieldFlowResolvedData,
     type YieldPositionFlowType,
@@ -43,10 +47,14 @@ export const getPushErrorType = (message: string): YieldPushTransactionError['er
         ? 'push-transaction-pending-conflict'
         : 'push-transaction-failed';
 
+export type SignYieldActionReviewThunkState = DeviceRootState &
+    StablecoinYieldRootState &
+    WalletSettingsRootState;
+
 export const signYieldActionReviewThunk = createThunk<
     { serializedTx: string },
     YieldActionReviewThunkPayload,
-    { rejectValue: YieldSignTransactionError }
+    { rejectValue: YieldSignTransactionError; state: SignYieldActionReviewThunkState }
 >(
     `${YIELD_TRANSACTION_THUNK_PREFIX}/signActionReview`,
     async (
@@ -151,10 +159,18 @@ export const signYieldActionReviewThunk = createThunk<
     },
 );
 
+export type PushYieldActionReviewThunkState = StablecoinYieldRootState &
+    SynchronizeSentTransactionThunkState;
+export type PushYieldActionReviewThunkDeps = SynchronizeSentTransactionThunkDeps;
+
 export const pushYieldActionReviewThunk = createThunk<
     { txid: string },
     YieldActionReviewThunkPayload,
-    { rejectValue: YieldPushTransactionError }
+    {
+        rejectValue: YieldPushTransactionError;
+        state: PushYieldActionReviewThunkState;
+        extra: PushYieldActionReviewThunkDeps;
+    }
 >(
     `${YIELD_TRANSACTION_THUNK_PREFIX}/pushActionReview`,
     async ({ flowData, flowKey, flowType }, { dispatch, getState, rejectWithValue }) => {
