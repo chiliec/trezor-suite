@@ -1,7 +1,11 @@
+import { type ThunkDispatch, type UnknownAction } from '@reduxjs/toolkit';
+
 import { asEvmAddress } from '@suite-common/calldata';
 import { getYieldVault } from '@suite-common/earn-stablecoin-api';
 import { getNetwork } from '@suite-common/wallet-config';
 import {
+    type EthereumGetCurrentNonceThunkState,
+    type FeesRootState,
     type YieldFeeEstimationError,
     type YieldFlowResolvedData,
     type YieldWithdrawFlowType,
@@ -15,15 +19,21 @@ import { type Account } from '@suite-common/wallet-types';
 import { getAccountIdentity, getConvertedOrDefaultFeeInfo } from '@suite-common/wallet-utils';
 import { type Result, err, ok } from '@trezor/type-utils';
 
-import type { AppState, Dispatch } from 'src/types/suite';
+export type ComposeYieldWithdrawTransactionState = EthereumGetCurrentNonceThunkState &
+    FeesRootState;
+type ComposeYieldWithdrawTransactionDispatch = ThunkDispatch<
+    ComposeYieldWithdrawTransactionState,
+    Record<never, never>,
+    UnknownAction
+>;
 
 export type ComposeYieldWithdrawTransactionParams = {
     account: Account & { networkType: 'ethereum' };
     flowData: YieldFlowResolvedData;
     amount: string;
     flowType: YieldWithdrawFlowType;
-    dispatch: Dispatch;
-    getState: () => AppState;
+    dispatch: ComposeYieldWithdrawTransactionDispatch;
+    getState: () => ComposeYieldWithdrawTransactionState;
 };
 
 export const composeYieldWithdrawTransaction = async ({

@@ -64,7 +64,7 @@ type ComposeYieldDepositTransactionPayload = {
     flowData: YieldFlowResolvedData;
     amount: string;
 };
-type ComposeYieldDepositTransactionThunkState = AccountsRootState &
+export type ComposeYieldDepositTransactionThunkState = AccountsRootState &
     FeesRootState &
     TransactionsRootState;
 
