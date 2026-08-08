@@ -1,9 +1,10 @@
 import { type ActionReducerMapBuilder, type EnhancedStore, createReducer } from '@reduxjs/toolkit';
-import type { ThunkDispatch } from 'redux-thunk';
 
 // TODO: This dependency on the global ExtraDependencies type is bad, temporary, terrible, and
 // disastrous. Remove it in follow-ups tracked by https://github.com/trezor/trezor-suite/issues/30770.
 import { type ExtraDependenciesForReducer } from '@suite-common/redux-extra-dependencies';
+
+import { type SelectiveThunkDispatch } from './types';
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
 type NotFunction<T> = T extends Function ? never : T;
@@ -34,8 +35,12 @@ export const castExtraStore = <TExtra, TStore extends EnhancedStore<any, any>>(
     store: TStore,
     extra: TExtra | null,
 ): {
-    store: TStore & {
-        dispatch: ThunkDispatch<EnhancedStoreState<TStore>, TExtra, EnhancedStoreAction<TStore>>;
+    store: Omit<TStore, 'dispatch'> & {
+        dispatch: SelectiveThunkDispatch<
+            EnhancedStoreState<TStore>,
+            TExtra,
+            EnhancedStoreAction<TStore>
+        >;
     };
     extra: NonNullable<TExtra>;
 } => {
