@@ -128,15 +128,6 @@ const getPlugins = (): ExpoPlugins => {
                 microphonePermission: false,
             },
         ],
-        [
-            'expo-media-library',
-            {
-                photosPermission: false,
-                savePhotosPermission:
-                    'Allow $(PRODUCT_NAME) to save QR code images to your photos.',
-                granularPermissions: ['photo'],
-            },
-        ],
         ['expo-video'],
         [
             'expo-build-properties',
@@ -310,6 +301,8 @@ export default ({ config }: ConfigContext): ExpoConfig => {
                 NSFaceIDUsageDescription:
                     '$(PRODUCT_NAME) needs Face ID and Touch ID to keep sensitive data about your portfolio private.',
                 NSMicrophoneUsageDescription: 'This app does not require access to the microphone.',
+                NSPhotoLibraryAddUsageDescription:
+                    'Allow $(PRODUCT_NAME) to save QR code images to your photos.',
                 ITSAppUsesNonExemptEncryption: false,
                 NSAppTransportSecurity: {
                     NSAllowsArbitraryLoads: true,

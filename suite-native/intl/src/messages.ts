@@ -1011,7 +1011,9 @@ export const messages = {
             verify: 'Verify',
             copyAddress: 'Copy Address',
             saveQRCodeImage: 'Save to photos',
-            shareQRCodeImage: 'Share...',
+            shareQRCodeImage: 'Share',
+            qrCodeSavedToPhotos: 'QR code saved to photos.',
+            qrCodeCopiedToClipboard: 'QR code copied to clipboard.',
         },
         addressCopiedBottomSheet: {
             title: 'Address copied.',
