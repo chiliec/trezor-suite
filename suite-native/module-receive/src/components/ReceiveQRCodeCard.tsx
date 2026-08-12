@@ -3,7 +3,11 @@ import { Box, Card } from '@suite-native/atoms';
 import { ClipboardCopyMenu } from '@suite-native/clipboard';
 import { useNativeStyles } from '@trezor/styles-native';
 
-import { receiveQRCodeCardStyle, receiveQRCodeContainerStyle } from './ReceiveQRCodeCard.styles';
+import {
+    RECEIVE_QR_CODE_PADDING,
+    receiveQRCodeCardStyle,
+    receiveQRCodeContainerStyle,
+} from './ReceiveQRCodeCard.styles';
 import type { ReceiveQRCodeCardProps } from './ReceiveQRCodeCard.types';
 import { ReceiveQRCodeContent } from './ReceiveQRCodeContent';
 
@@ -15,8 +19,7 @@ export const ReceiveQRCodeCard = ({
         applyStyle,
         utils: { spacings },
     } = useNativeStyles();
-    const qrCodeHorizontalPadding = spacings.sp16 * 2;
-    const qrCodeVerticalPadding = spacings.sp16 * 2;
+    const qrCodePadding = spacings[RECEIVE_QR_CODE_PADDING] * 2;
 
     return (
         <ClipboardCopyMenu onCopy={onCopyAddress}>
@@ -24,8 +27,8 @@ export const ReceiveQRCodeCard = ({
                 <Box
                     style={applyStyle(receiveQRCodeContainerStyle, {
                         qrCodeSize: qrCodeContentProps.qrCodeSize,
-                        paddingHorizontal: qrCodeHorizontalPadding,
-                        paddingVertical: qrCodeVerticalPadding,
+                        paddingHorizontal: qrCodePadding,
+                        paddingVertical: qrCodePadding,
                     })}
                 >
                     <ReceiveQRCodeContent {...qrCodeContentProps} />

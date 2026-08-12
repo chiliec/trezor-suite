@@ -6,7 +6,11 @@ import { ClipboardCopyMenu } from '@suite-native/clipboard';
 import { useTranslate } from '@suite-native/intl';
 import { useNativeStyles } from '@trezor/styles-native';
 
-import { receiveQRCodeCardStyle, receiveQRCodeContainerStyle } from './ReceiveQRCodeCard.styles';
+import {
+    RECEIVE_QR_CODE_PADDING,
+    receiveQRCodeCardStyle,
+    receiveQRCodeContainerStyle,
+} from './ReceiveQRCodeCard.styles';
 import type { ReceiveQRCodeCardProps } from './ReceiveQRCodeCard.types';
 import { ReceiveQRCodeContent } from './ReceiveQRCodeContent';
 import { useReceiveQRCodeActions } from '../hooks/useReceiveQRCodeActions.ios';
@@ -22,8 +26,7 @@ export const ReceiveQRCodeCard = ({
     const { translate } = useTranslate();
     const { qrCodeViewRef, handleCopyQRCode, handleSaveQRCode, handleShareQRCode } =
         useReceiveQRCodeActions();
-    const qrCodeHorizontalPadding = spacings.sp16 * 2;
-    const qrCodeVerticalPadding = spacings.sp16 * 2;
+    const qrCodePadding = spacings[RECEIVE_QR_CODE_PADDING] * 2;
 
     return (
         <ClipboardCopyMenu
@@ -56,8 +59,8 @@ export const ReceiveQRCodeCard = ({
                     options={{ fileName: 'trezor-receive-address-qr', format: 'png' }}
                     style={applyStyle(receiveQRCodeContainerStyle, {
                         qrCodeSize: qrCodeContentProps.qrCodeSize,
-                        paddingHorizontal: qrCodeHorizontalPadding,
-                        paddingVertical: qrCodeVerticalPadding,
+                        paddingHorizontal: qrCodePadding,
+                        paddingVertical: qrCodePadding,
                     })}
                 >
                     <ReceiveQRCodeContent {...qrCodeContentProps} />

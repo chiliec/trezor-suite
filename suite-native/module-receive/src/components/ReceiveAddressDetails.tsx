@@ -11,6 +11,7 @@ import type { StaticSessionId } from '@trezor/connect';
 import { prepareNativeStyle, useNativeStyles } from '@trezor/styles-native';
 
 import { ReceiveQRCodeCard } from './ReceiveQRCodeCard';
+import { RECEIVE_QR_CODE_PADDING } from './ReceiveQRCodeCard.styles';
 
 type ReceiveAddressDetailsProps = {
     address: string;
@@ -46,9 +47,8 @@ export const ReceiveAddressDetails = ({
 
     const screenHorizontalPadding = spacings.sp16 * 2;
     const cardHorizontalMargin = spacings.sp8 * 2;
-    const qrCodeHorizontalPadding = spacings.sp16 * 2;
-    const horizontalOffset =
-        screenHorizontalPadding + cardHorizontalMargin + qrCodeHorizontalPadding;
+    const qrCodePadding = spacings[RECEIVE_QR_CODE_PADDING] * 2;
+    const horizontalOffset = screenHorizontalPadding + cardHorizontalMargin + qrCodePadding;
     const qrCodeSize = Math.min(MAX_RECEIVE_QR_CODE_SIZE, windowWidth - horizontalOffset);
 
     const handleCopyAddress = async () => {

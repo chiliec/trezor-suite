@@ -1,6 +1,7 @@
 import { TokenIcon } from '@suite-native/icons';
 import { QRCode } from '@suite-native/qr-code';
 
+import { RECEIVE_QR_CODE_PADDING } from './ReceiveQRCodeCard.styles';
 import type { ReceiveQRCodeContentProps } from './ReceiveQRCodeCard.types';
 
 export const ReceiveQRCodeContent = ({
@@ -12,8 +13,8 @@ export const ReceiveQRCodeContent = ({
     <QRCode
         data={address}
         qrCodeSize={qrCodeSize}
-        paddingHorizontal="sp16"
-        paddingVertical="sp16"
+        paddingHorizontal={RECEIVE_QR_CODE_PADDING}
+        paddingVertical={RECEIVE_QR_CODE_PADDING}
         centerIcon={
             <TokenIcon
                 symbol={networkSymbol}
