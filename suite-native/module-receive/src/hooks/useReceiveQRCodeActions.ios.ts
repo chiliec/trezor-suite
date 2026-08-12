@@ -1,3 +1,4 @@
+// This is the iOS implementation selected by Metro through the `.ios` filename suffix.
 import { useCallback, useRef } from 'react';
 import { Linking, Share } from 'react-native';
 import { type ViewShotRef, captureRef } from 'react-native-view-shot';
@@ -9,9 +10,8 @@ import { useAlert } from '@suite-native/alerts';
 import { events, selectNativeAnalyticsDep } from '@suite-native/analytics';
 import { useTranslate } from '@suite-native/intl';
 import { useToast } from '@suite-native/toasts';
-import { exhaustive } from '@trezor/type-utils';
 
-import { saveQRCodeImageToPhotos } from './saveQRCodeImageToPhotos';
+import { saveQRCodeImageToPhotos } from './saveQRCodeImageToPhotos.ios';
 
 const getShareableFileURI = (uri: string): string =>
     uri.startsWith('file://') ? uri : `file://${uri}`;
@@ -140,16 +140,6 @@ export const useReceiveQRCodeActions = () => {
                     });
 
                     return;
-                case 'notSupported':
-                    showAlert({
-                        title: translate('moduleReceive.addressActions.qrCodeSavingNotSupported'),
-                        pictogramVariant: 'warning',
-                        primaryButtonTitle: translate('generic.buttons.close'),
-                    });
-
-                    return;
-                default:
-                    return exhaustive(result);
             }
         } catch {
             showGenericErrorAlert();

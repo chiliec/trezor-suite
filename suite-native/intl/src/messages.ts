@@ -1014,7 +1014,6 @@ export const messages = {
             shareQRCodeImage: 'Share',
             qrCodeSavedToPhotos: 'QR code saved to photos.',
             qrCodeCopiedToClipboard: 'QR code copied to clipboard.',
-            qrCodeSavingNotSupported: 'Saving QR codes to photos is not supported on this device.',
             photoPermissionDenied: {
                 title: 'Photo access denied',
                 description: 'Enable photo access in your device settings to save QR codes.',

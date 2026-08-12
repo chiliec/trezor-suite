@@ -8,7 +8,8 @@
             "android": {
                 "exclude": [
                     "@expo/ui",
-                    "expo-media-library"
+                    "expo-media-library",
+                    "react-native-view-shot"
                 ]
             }
         }

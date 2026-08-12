@@ -1,7 +1,9 @@
 // This is the iOS implementation selected by Metro through the `.ios` filename suffix.
-import type { SaveQRCodeImageToPhotos } from './saveQRCodeImageToPhotos.types';
+type SaveQRCodeImageToPhotosResult = 'saved' | 'permissionDenied';
 
-export const saveQRCodeImageToPhotos: SaveQRCodeImageToPhotos = async getQRCodeImageURI => {
+export const saveQRCodeImageToPhotos = async (
+    getQRCodeImageURI: () => Promise<string>,
+): Promise<SaveQRCodeImageToPhotosResult> => {
     // The `legacy` entry point is used intentionally: `saveToLibraryAsync` only requires
     // add-only ("write") photo permission, while the current `Asset.create` API needs full
     // library access, which the app does not request.

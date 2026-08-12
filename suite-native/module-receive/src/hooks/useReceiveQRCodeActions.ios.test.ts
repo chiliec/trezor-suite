@@ -1,3 +1,4 @@
+// This is the iOS test selected through the `.ios` filename suffix.
 import { Linking, Share } from 'react-native';
 import { type ViewShotRef } from 'react-native-view-shot';
 
@@ -6,7 +7,7 @@ import { mockNativeAnalytics } from '@suite-native/analytics/mocks';
 import { getTranslation } from '@suite-native/intl';
 import { act, renderHookWithBasicProvider, waitFor } from '@suite-native/test-utils';
 
-import { useReceiveQRCodeActions } from './useReceiveQRCodeActions';
+import { useReceiveQRCodeActions } from './useReceiveQRCodeActions.ios';
 
 const mockShare = jest.spyOn(Share, 'share');
 const mockOpenSettings = jest.spyOn(Linking, 'openSettings');
