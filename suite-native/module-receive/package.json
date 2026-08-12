@@ -48,6 +48,7 @@
         "@trezor/device-utils": "workspace:*",
         "@trezor/env-utils": "workspace:*",
         "@trezor/styles-native": "workspace:*",
+        "@trezor/theme": "workspace:*",
         "@trezor/type-utils": "workspace:*",
         "@trezor/urls": "workspace:*",
         "expo-clipboard": "~56.0.3",

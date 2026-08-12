@@ -4,12 +4,12 @@ import type { NetworkSymbol } from '@suite-common/wallet-config';
 import { type AccountDescriptor, type TokenAddress } from '@suite-common/wallet-types';
 import { AddressLabelEditable } from '@suite-native/address';
 import { Box, VStack } from '@suite-native/atoms';
-import { ClipboardCopyMenu, useCopyToClipboard } from '@suite-native/clipboard';
+import { ClipboardCopyMenu } from '@suite-native/clipboard';
 import { AddressFormatter } from '@suite-native/formatters';
-import { useTranslate } from '@suite-native/intl';
 import type { StaticSessionId } from '@trezor/connect';
 import { prepareNativeStyle, useNativeStyles } from '@trezor/styles-native';
 
+import { useReceiveAddressInteractions } from './ReceiveAddressInteractionsProvider';
 import { ReceiveQRCodeCard } from './ReceiveQRCodeCard';
 import { RECEIVE_QR_CODE_PADDING } from './ReceiveQRCodeCard.styles';
 
@@ -37,23 +37,18 @@ export const ReceiveAddressDetails = ({
     tokenContract,
     showLabelEdit = true,
 }: ReceiveAddressDetailsProps) => {
-    const copyToClipboard = useCopyToClipboard();
     const {
         applyStyle,
         utils: { spacings },
     } = useNativeStyles();
     const { width: windowWidth } = useWindowDimensions();
-    const { translate } = useTranslate();
+    const { handleCopyAddress } = useReceiveAddressInteractions();
 
     const screenHorizontalPadding = spacings.sp16 * 2;
     const cardHorizontalMargin = spacings.sp8 * 2;
     const qrCodePadding = spacings[RECEIVE_QR_CODE_PADDING] * 2;
     const horizontalOffset = screenHorizontalPadding + cardHorizontalMargin + qrCodePadding;
     const qrCodeSize = Math.min(MAX_RECEIVE_QR_CODE_SIZE, windowWidth - horizontalOffset);
-
-    const handleCopyAddress = async () => {
-        await copyToClipboard(address, translate('qrCode.addressCopied'));
-    };
 
     return (
         <VStack spacing="sp24" flex={1}>
