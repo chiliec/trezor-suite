@@ -144,6 +144,7 @@ const usedIcons = [
     'qrCode',
     'question',
     'questionSimple',
+    'recoverySeed',
     'repeat',
     'rocketLaunch',
     'rocketLaunchFilled',

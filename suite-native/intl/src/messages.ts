@@ -1883,6 +1883,16 @@ export const messages = {
             },
         },
         recoveryInstructionsScreen: {
+            bullet1: {
+                title: 'Get your wallet backup',
+                description:
+                    'Your wallet backup (recovery seed) is one or more lists of words you wrote down when you first set up your previous hardware wallet.',
+            },
+            bullet2: {
+                title: "Your backup's origin",
+                description:
+                    'A wallet created on an exchange or using different hardware may not have the same security as one created on your Trezor. <link>Learn more</link>',
+            },
             callout: 'Recover assets',
             title: 'Get your wallet backup',
             description:
