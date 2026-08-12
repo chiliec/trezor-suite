@@ -18,18 +18,22 @@ export const ReceiveQRCodeMenu = ({
             menuActions={[
                 {
                     label: translate('moduleReceive.addressActions.shareQRCodeImage'),
+                    systemImage: 'square.and.arrow.up',
                     onPress: onShareQRCode,
                 },
                 {
                     label: translate('moduleReceive.addressActions.saveQRCodeImage'),
+                    systemImage: 'square.and.arrow.down',
                     onPress: onSaveQRCode,
                 },
                 {
                     label: translate('generic.buttons.copy'),
+                    systemImage: 'qrcode',
                     onPress: onCopyQRCode,
                 },
                 {
                     label: translate('moduleReceive.addressActions.copyAddress'),
+                    systemImage: 'doc.on.doc',
                     onPress: onCopyAddress,
                 },
             ]}

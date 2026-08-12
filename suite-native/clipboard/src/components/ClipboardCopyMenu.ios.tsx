@@ -37,6 +37,7 @@ export const ClipboardCopyMenu = ({
     const actions = menuActions ?? [
         {
             label: copyLabel ?? translate('generic.buttons.copy'),
+            systemImage: 'doc.on.doc',
             onPress: handleCopy,
         },
         ...(additionalActions ?? []),
@@ -46,8 +47,13 @@ export const ClipboardCopyMenu = ({
         <Host matchContents style={style}>
             <ContextMenu>
                 <ContextMenu.Items>
-                    {actions.map(({ label, onPress }) => (
-                        <Button key={label} label={label} onPress={() => void onPress()} />
+                    {actions.map(({ label, systemImage, onPress }) => (
+                        <Button
+                            key={label}
+                            label={label}
+                            systemImage={systemImage}
+                            onPress={() => void onPress()}
+                        />
                     ))}
                 </ContextMenu.Items>
                 <ContextMenu.Trigger>
