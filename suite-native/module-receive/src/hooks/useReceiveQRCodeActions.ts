@@ -1,13 +1,17 @@
 import { useCallback, useRef } from 'react';
-import { Alert, Platform, Share } from 'react-native';
+import { Linking, Share } from 'react-native';
 import { type ViewShotRef, captureRef } from 'react-native-view-shot';
 
 import * as Clipboard from 'expo-clipboard';
 
 import { useServices } from '@suite-common/dependency-injection';
+import { useAlert } from '@suite-native/alerts';
 import { events, selectNativeAnalyticsDep } from '@suite-native/analytics';
 import { useTranslate } from '@suite-native/intl';
 import { useToast } from '@suite-native/toasts';
+import { exhaustive } from '@trezor/type-utils';
+
+import { saveQRCodeImageToPhotos } from './saveQRCodeImageToPhotos';
 
 const getShareableFileURI = (uri: string): string =>
     uri.startsWith('file://') ? uri : `file://${uri}`;
@@ -25,37 +29,24 @@ const captureQRCodeImageBase64 = (qrCodeView: ViewShotRef): Promise<string> =>
         result: 'base64',
     });
 
-const saveQRCodeImageToPhotos = async (qrCodeView: ViewShotRef): Promise<boolean> => {
-    if (Platform.OS !== 'ios') {
-        return false;
-    }
-
-    // The `legacy` entry point is used intentionally: `saveToLibraryAsync` only requires
-    // add-only ("write") photo permission, while the current `Asset.create` API needs full
-    // library access, which the app does not request.
-    const MediaLibrary = await import('expo-media-library/legacy');
-    const permission = await MediaLibrary.requestPermissionsAsync(true);
-
-    if (!permission.granted) {
-        return false;
-    }
-
-    const qrCodeImageURI = await captureQRCodeImageURI(qrCodeView);
-
-    await MediaLibrary.saveToLibraryAsync(getShareableFileURI(qrCodeImageURI));
-
-    return true;
-};
-
 export const useReceiveQRCodeActions = () => {
     const qrCodeViewRef = useRef<ViewShotRef>(null);
     const { analytics } = useServices(selectNativeAnalyticsDep);
     const { translate } = useTranslate();
     const { showToast } = useToast();
+    const { showAlert } = useAlert();
+
+    const showGenericErrorAlert = useCallback(() => {
+        showAlert({
+            title: translate('generic.unknownError'),
+            pictogramVariant: 'critical',
+            primaryButtonTitle: translate('generic.buttons.close'),
+        });
+    }, [showAlert, translate]);
 
     const handleShareQRCode = useCallback(async () => {
         if (qrCodeViewRef.current === null) {
-            Alert.alert(translate('generic.unknownError'));
+            showGenericErrorAlert();
 
             return;
         }
@@ -77,13 +68,13 @@ export const useReceiveQRCodeActions = () => {
                 payload: { action: 'share' },
             });
         } catch {
-            Alert.alert(translate('generic.unknownError'));
+            showGenericErrorAlert();
         }
-    }, [analytics, translate]);
+    }, [analytics, showGenericErrorAlert, translate]);
 
     const handleCopyQRCode = useCallback(async () => {
         if (qrCodeViewRef.current === null) {
-            Alert.alert(translate('generic.unknownError'));
+            showGenericErrorAlert();
 
             return;
         }
@@ -101,35 +92,69 @@ export const useReceiveQRCodeActions = () => {
                 message: translate('moduleReceive.addressActions.qrCodeCopiedToClipboard'),
             });
         } catch {
-            Alert.alert(translate('generic.unknownError'));
+            showGenericErrorAlert();
         }
-    }, [analytics, showToast, translate]);
+    }, [analytics, showGenericErrorAlert, showToast, translate]);
 
     const handleSaveQRCode = useCallback(async () => {
-        if (qrCodeViewRef.current === null) {
-            Alert.alert(translate('generic.unknownError'));
+        const qrCodeView = qrCodeViewRef.current;
+
+        if (qrCodeView === null) {
+            showGenericErrorAlert();
 
             return;
         }
 
         try {
-            const hasSavedImage = await saveQRCodeImageToPhotos(qrCodeViewRef.current);
+            const result = await saveQRCodeImageToPhotos(async () =>
+                getShareableFileURI(await captureQRCodeImageURI(qrCodeView)),
+            );
 
-            if (hasSavedImage) {
-                analytics.report({
-                    type: events.receiveQRCodeActionEvent.name,
-                    payload: { action: 'save' },
-                });
-                showToast({
-                    icon: 'check',
-                    intent: 'neutral',
-                    message: translate('moduleReceive.addressActions.qrCodeSavedToPhotos'),
-                });
+            switch (result) {
+                case 'saved':
+                    analytics.report({
+                        type: events.receiveQRCodeActionEvent.name,
+                        payload: { action: 'save' },
+                    });
+                    showToast({
+                        icon: 'check',
+                        intent: 'neutral',
+                        message: translate('moduleReceive.addressActions.qrCodeSavedToPhotos'),
+                    });
+
+                    return;
+                case 'permissionDenied':
+                    showAlert({
+                        title: translate(
+                            'moduleReceive.addressActions.photoPermissionDenied.title',
+                        ),
+                        description: translate(
+                            'moduleReceive.addressActions.photoPermissionDenied.description',
+                        ),
+                        pictogramVariant: 'warning',
+                        primaryButtonTitle: translate(
+                            'moduleReceive.addressActions.photoPermissionDenied.openSettings',
+                        ),
+                        onPressPrimaryButton: () => void Linking.openSettings(),
+                        secondaryButtonTitle: translate('generic.buttons.cancel'),
+                    });
+
+                    return;
+                case 'notSupported':
+                    showAlert({
+                        title: translate('moduleReceive.addressActions.qrCodeSavingNotSupported'),
+                        pictogramVariant: 'warning',
+                        primaryButtonTitle: translate('generic.buttons.close'),
+                    });
+
+                    return;
+                default:
+                    return exhaustive(result);
             }
         } catch {
-            Alert.alert(translate('generic.unknownError'));
+            showGenericErrorAlert();
         }
-    }, [analytics, showToast, translate]);
+    }, [analytics, showAlert, showGenericErrorAlert, showToast, translate]);
 
     return {
         qrCodeViewRef,

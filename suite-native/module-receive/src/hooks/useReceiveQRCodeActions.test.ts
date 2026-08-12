@@ -1,4 +1,4 @@
-import { Alert, Platform, Share } from 'react-native';
+import { Linking, Share } from 'react-native';
 import { type ViewShotRef } from 'react-native-view-shot';
 
 import { type NativeAnalyticsDep, events } from '@suite-native/analytics';
@@ -9,13 +9,14 @@ import { act, renderHookWithBasicProvider, waitFor } from '@suite-native/test-ut
 import { useReceiveQRCodeActions } from './useReceiveQRCodeActions';
 
 const mockShare = jest.spyOn(Share, 'share');
-const mockAlert = jest.spyOn(Alert, 'alert');
+const mockOpenSettings = jest.spyOn(Linking, 'openSettings');
 const mockCaptureRef = jest.fn();
 const mockSetImageAsync = jest.fn();
 const mockRequestPermissionsAsync = jest.fn();
 const mockSaveToLibraryAsync = jest.fn();
 const mockAnalyticsReport = jest.fn();
 const mockShowToast = jest.fn();
+const mockShowAlert = jest.fn();
 const services: NativeAnalyticsDep = {
     analytics: mockNativeAnalytics(mockAnalyticsReport),
 };
@@ -37,6 +38,10 @@ jest.mock('@suite-native/toasts', () => ({
     useToast: () => ({ showToast: mockShowToast }),
 }));
 
+jest.mock('@suite-native/alerts', () => ({
+    useAlert: () => ({ showAlert: mockShowAlert }),
+}));
+
 describe('useReceiveQRCodeActions', () => {
     const qrCodeView = {} as ViewShotRef;
 
@@ -46,6 +51,7 @@ describe('useReceiveQRCodeActions', () => {
     beforeEach(() => {
         jest.clearAllMocks();
         mockShare.mockResolvedValue({ action: Share.sharedAction });
+        mockOpenSettings.mockResolvedValue();
         mockCaptureRef.mockResolvedValue('/cache/trezor-receive-address-qr.png');
         mockSetImageAsync.mockResolvedValue(undefined);
         mockRequestPermissionsAsync.mockResolvedValue({ granted: true });
@@ -134,25 +140,23 @@ describe('useReceiveQRCodeActions', () => {
         expect(mockSaveToLibraryAsync).not.toHaveBeenCalled();
         expect(mockAnalyticsReport).not.toHaveBeenCalled();
         expect(mockShowToast).not.toHaveBeenCalled();
-    });
+        expect(mockShowAlert).toHaveBeenCalledWith({
+            title: getTranslation('moduleReceive.addressActions.photoPermissionDenied.title'),
+            description: getTranslation(
+                'moduleReceive.addressActions.photoPermissionDenied.description',
+            ),
+            pictogramVariant: 'warning',
+            primaryButtonTitle: getTranslation(
+                'moduleReceive.addressActions.photoPermissionDenied.openSettings',
+            ),
+            onPressPrimaryButton: expect.any(Function),
+            secondaryButtonTitle: getTranslation('generic.buttons.cancel'),
+        });
 
-    it('does not access the media library on Android', async () => {
-        const originalOS = Platform.OS;
-        Platform.OS = 'android';
-        const { result } = renderUseReceiveQRCodeActions();
-        result.current.qrCodeViewRef.current = qrCodeView;
+        const openSettingsAction = mockShowAlert.mock.calls[0]?.[0]?.onPressPrimaryButton;
+        openSettingsAction?.();
 
-        try {
-            await act(() => result.current.handleSaveQRCode());
-
-            expect(mockRequestPermissionsAsync).not.toHaveBeenCalled();
-            expect(mockCaptureRef).not.toHaveBeenCalled();
-            expect(mockSaveToLibraryAsync).not.toHaveBeenCalled();
-            expect(mockAnalyticsReport).not.toHaveBeenCalled();
-            expect(mockShowToast).not.toHaveBeenCalled();
-        } finally {
-            Platform.OS = originalOS;
-        }
+        expect(mockOpenSettings).toHaveBeenCalledTimes(1);
     });
 
     it('shows an error when the QR code is not available', async () => {
@@ -161,7 +165,11 @@ describe('useReceiveQRCodeActions', () => {
         await act(() => result.current.handleShareQRCode());
 
         await waitFor(() => {
-            expect(mockAlert).toHaveBeenCalledWith('Something went wrong');
+            expect(mockShowAlert).toHaveBeenCalledWith({
+                title: 'Something went wrong',
+                pictogramVariant: 'critical',
+                primaryButtonTitle: 'Close',
+            });
         });
         expect(mockShare).not.toHaveBeenCalled();
     });

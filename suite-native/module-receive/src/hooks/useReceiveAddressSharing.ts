@@ -1,7 +1,8 @@
 import { useCallback } from 'react';
-import { Alert, Share } from 'react-native';
+import { Share } from 'react-native';
 
 import { useServices } from '@suite-common/dependency-injection';
+import { useAlert } from '@suite-native/alerts';
 import { events, selectNativeAnalyticsDep } from '@suite-native/analytics';
 import { useBottomSheetModal } from '@suite-native/atoms';
 import { useTranslate } from '@suite-native/intl';
@@ -23,6 +24,7 @@ export const useReceiveAddressSharing = ({
         closeModal: closeSharedAddressBottomSheet,
     } = useBottomSheetModal();
     const { translate } = useTranslate();
+    const { showAlert } = useAlert();
 
     const handleVerifySharedAddress = useCallback(() => {
         closeSharedAddressBottomSheet();
@@ -40,9 +42,13 @@ export const useReceiveAddressSharing = ({
             analytics.report({ type: events.receiveShareAddressEvent.name });
             openSharedAddressBottomSheet();
         } catch {
-            Alert.alert(translate('generic.unknownError'));
+            showAlert({
+                title: translate('generic.unknownError'),
+                pictogramVariant: 'critical',
+                primaryButtonTitle: translate('generic.buttons.close'),
+            });
         }
-    }, [address, analytics, openSharedAddressBottomSheet, translate]);
+    }, [address, analytics, openSharedAddressBottomSheet, showAlert, translate]);
 
     return {
         sharedAddressBottomSheetRef,

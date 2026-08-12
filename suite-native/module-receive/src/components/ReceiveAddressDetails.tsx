@@ -13,6 +13,7 @@ import { QRCode } from '@suite-native/qr-code';
 import type { StaticSessionId } from '@trezor/connect';
 import { prepareNativeStyle, useNativeStyles } from '@trezor/styles-native';
 
+import { ReceiveQRCodeMenu } from './ReceiveQRCodeMenu';
 import { useReceiveQRCodeActions } from '../hooks/useReceiveQRCodeActions';
 
 type ReceiveAddressDetailsProps = {
@@ -78,26 +79,11 @@ export const ReceiveAddressDetails = ({
     return (
         <VStack spacing="sp24" flex={1}>
             <Box marginHorizontal="sp8" marginTop="sp8">
-                <ClipboardCopyMenu
-                    onCopy={handleCopyAddress}
-                    menuActions={[
-                        {
-                            label: translate('moduleReceive.addressActions.shareQRCodeImage'),
-                            onPress: handleShareQRCode,
-                        },
-                        {
-                            label: translate('moduleReceive.addressActions.saveQRCodeImage'),
-                            onPress: handleSaveQRCode,
-                        },
-                        {
-                            label: translate('generic.buttons.copy'),
-                            onPress: handleCopyQRCode,
-                        },
-                        {
-                            label: translate('moduleReceive.addressActions.copyAddress'),
-                            onPress: handleCopyAddress,
-                        },
-                    ]}
+                <ReceiveQRCodeMenu
+                    onShareQRCode={handleShareQRCode}
+                    onSaveQRCode={handleSaveQRCode}
+                    onCopyQRCode={handleCopyQRCode}
+                    onCopyAddress={handleCopyAddress}
                 >
                     <Card noPadding noShadow style={applyStyle(cardStyle)}>
                         <ViewShot
@@ -125,7 +111,7 @@ export const ReceiveAddressDetails = ({
                             />
                         </ViewShot>
                     </Card>
-                </ClipboardCopyMenu>
+                </ReceiveQRCodeMenu>
             </Box>
             <VStack spacing="sp8" alignItems="center" justifyContent="center" flex={1}>
                 {showLabelEdit && (

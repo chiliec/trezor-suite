@@ -1,4 +1,4 @@
-import { Alert, Share } from 'react-native';
+import { Share } from 'react-native';
 
 import { type NativeAnalyticsDep, events } from '@suite-native/analytics';
 import { mockNativeAnalytics } from '@suite-native/analytics/mocks';
@@ -11,9 +11,9 @@ const mockOpenSharedAddressBottomSheet = jest.fn();
 const mockCloseSharedAddressBottomSheet = jest.fn();
 const mockVerifyAddress = jest.fn();
 const mockShare = jest.spyOn(Share, 'share');
-const mockAlert = jest.spyOn(Alert, 'alert');
 const mockUseBottomSheetModal = jest.fn();
 const mockAnalyticsReport = jest.fn();
+const mockShowAlert = jest.fn();
 const services: NativeAnalyticsDep = {
     analytics: mockNativeAnalytics(mockAnalyticsReport),
 };
@@ -21,6 +21,10 @@ const services: NativeAnalyticsDep = {
 jest.mock('@suite-native/atoms', () => ({
     ...jest.requireActual('@suite-native/atoms'),
     useBottomSheetModal: () => mockUseBottomSheetModal(),
+}));
+
+jest.mock('@suite-native/alerts', () => ({
+    useAlert: () => ({ showAlert: mockShowAlert }),
 }));
 
 describe('useReceiveAddressSharing', () => {
@@ -85,7 +89,11 @@ describe('useReceiveAddressSharing', () => {
         await act(() => result.current.handleShareAddress());
 
         await waitFor(() => {
-            expect(mockAlert).toHaveBeenCalledWith('Something went wrong');
+            expect(mockShowAlert).toHaveBeenCalledWith({
+                title: 'Something went wrong',
+                pictogramVariant: 'critical',
+                primaryButtonTitle: 'Close',
+            });
         });
         expect(mockOpenSharedAddressBottomSheet).not.toHaveBeenCalled();
         expect(mockAnalyticsReport).not.toHaveBeenCalled();

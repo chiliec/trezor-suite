@@ -1,3 +1,4 @@
+// This is the iOS implementation selected by Metro through the `.ios` filename suffix.
 import { Button, ContextMenu, Host, RNHostView } from '@expo/ui/swift-ui';
 import * as Haptics from 'expo-haptics';
 
