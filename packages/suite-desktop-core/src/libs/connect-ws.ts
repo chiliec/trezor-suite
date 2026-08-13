@@ -135,7 +135,7 @@ export const exposeConnectWs = ({
         const handshakeTimeout = setTimeout(() => {
             if (!isHandshakeDone) {
                 logger.warn(LOG_PREFIX, `connection closed: handshake timeout from ${ip}:${port}`);
-                ws.close();
+                req.socket.destroy();
             }
         }, HANDSHAKE_TIMEOUT_MS);
 
