@@ -24,6 +24,7 @@ import { type Dependencies } from '../modules';
 const LOG_PREFIX = 'connect-ws';
 const HANDSHAKE_TIMEOUT_MS = 10000;
 const MAX_CONCURRENT_CONNECTIONS = 10;
+const MAX_MESSAGE_SIZE = 1024 * 1024;
 
 /**
  * allowed message from connect-in-suite-desktop implementation
@@ -87,6 +88,7 @@ export const exposeConnectWs = ({
 
     const wss = new WebSocketServer({
         noServer: true,
+        maxPayload: MAX_MESSAGE_SIZE,
     });
 
     wss.on('listening', () => {
