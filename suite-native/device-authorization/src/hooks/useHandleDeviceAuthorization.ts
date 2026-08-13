@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useSelector } from 'react-redux';
 
-import { useNavigation } from '@react-navigation/native';
+import { CommonActions, type NavigationState, useNavigation } from '@react-navigation/native';
 
 import {
     type AuthorizeDeviceStackParamList,
@@ -51,12 +51,33 @@ export const useHandleDeviceAuthorization = () => {
                     return;
                 }
                 break;
-            case DeviceAuthorizationStep.PassphraseRequested:
-                // Feature requests passphrase
-                navigation.navigate(RootStackRoutes.AuthorizeDeviceStack, {
-                    screen: AuthorizeDeviceStackRoutes.PassphraseForm,
-                });
+            case DeviceAuthorizationStep.PassphraseRequested: {
+                // Feature requests passphrase.
+                // If AuthorizeDeviceStack is already focused (e.g. pin-locked passphrase
+                // wallet: PinMatrix is showing, then passphrase is requested),
+                // navigate(AuthorizeDeviceStack, { screen }) is a no-op — React Navigation
+                // only merges params into the already-mounted stack. Dispatch the
+                // navigate at the nested navigator instead.
+                //
+                // getState() is typed to the primary (AuthorizeDeviceStack) navigator, but
+                // this hook lives at the root, so cast to reach the root routes.
+                const rootState = navigation.getState() as unknown as NavigationState;
+                const authStackRoute = rootState.routes.find(
+                    route => route.name === RootStackRoutes.AuthorizeDeviceStack,
+                );
+
+                if (authStackRoute?.state?.key) {
+                    navigation.dispatch({
+                        ...CommonActions.navigate(AuthorizeDeviceStackRoutes.PassphraseForm),
+                        target: authStackRoute.state.key,
+                    });
+                } else {
+                    navigation.navigate(RootStackRoutes.AuthorizeDeviceStack, {
+                        screen: AuthorizeDeviceStackRoutes.PassphraseForm,
+                    });
+                }
                 break;
+            }
             case DeviceAuthorizationStep.ContinueOnTrezorRequested:
                 navigation.navigate(RootStackRoutes.AuthorizeDeviceStack, {
                     screen: AuthorizeDeviceStackRoutes.ContinueOnTrezor,
