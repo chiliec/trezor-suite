@@ -24,7 +24,7 @@ import { type Dependencies } from '../modules';
 const LOG_PREFIX = 'connect-ws';
 const HANDSHAKE_TIMEOUT_MS = 10000;
 const MAX_CONCURRENT_CONNECTIONS = 50;
-const MAX_MESSAGE_SIZE = 1024 * 1024;
+const MAX_MESSAGE_SIZE = 2 * 1024 * 1024; // 2 MB
 
 /**
  * allowed message from connect-in-suite-desktop implementation
