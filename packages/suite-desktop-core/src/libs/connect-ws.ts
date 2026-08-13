@@ -169,7 +169,6 @@ export const exposeConnectWs = ({
                 return;
             }
             if (message.type === POPUP.HANDSHAKE) {
-                clearTimeout(handshakeTimeout);
                 const filterSelf = !process.env.PLAYWRIGHT_RUN; // ignore own process, unless testing
                 processOnPort = await findProcessFromIncomingPort(port, filterSelf).catch(() => {
                     logger.error(LOG_PREFIX, 'findProcessFromIncomingPort failed');
@@ -180,6 +179,7 @@ export const exposeConnectWs = ({
                 version = parseVersion(message.payload.settings.version);
                 requestedPermissions = message.payload.settings.requestedPermissions;
                 isHandshakeDone = true;
+                clearTimeout(handshakeTimeout);
                 ws.send(JSON.stringify({ id: message.id, type: POPUP.HANDSHAKE, payload: 'ok' }));
             } else if (message.type === POPUP.CLOSED) {
                 if (!isHandshakeDone) {
