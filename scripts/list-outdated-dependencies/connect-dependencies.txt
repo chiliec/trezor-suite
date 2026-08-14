@@ -7,6 +7,7 @@
 @codemirror/state
 @hbsnow/rehype-sectionize
 @headlessui/react
+@noble/curves
 @noble/post-quantum
 @reown/walletkit
 @scure/base
@@ -27,6 +28,7 @@
 @vitejs/plugin-react
 @walletconnect/core
 @walletconnect/react-native-compat
+@react-native-async-storage/async-storage # peer dependency required by @walletconnect/react-native-compat
 @walletconnect/types
 @walletconnect/utils
 buffer
