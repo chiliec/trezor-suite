@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
 
 import { type RouteProp, useIsFocused, useNavigation, useRoute } from '@react-navigation/native';
@@ -117,6 +117,8 @@ export const YieldDepositApprovalScreen = () => {
     const allowanceAmount = session?.approval.allowanceAmount;
     const allowanceStatus = session?.approval.allowanceStatus;
     const {
+        displayedPendingTransaction,
+        isSheetPresented,
         pendingBottomSheetRef,
         pendingModalProps,
         pendingTransaction: approvalPendingTransaction,
@@ -217,9 +219,20 @@ export const YieldDepositApprovalScreen = () => {
         routeParams: route.params,
     });
 
-    const handleApprovalConfirmed = useCallback(() => {
+    // Confirmation arrives while the pending sheet is still dismissing, and navigating in that
+    // window tears the tree down under it — see `useYieldPendingSheet`. Deferred rather than gated
+    // because this fires once, so dropping it would strand the flow on the approval screen.
+    const [isDepositNavigationPending, setIsDepositNavigationPending] = useState(false);
+    const handleApprovalConfirmed = useCallback(() => setIsDepositNavigationPending(true), []);
+
+    useEffect(() => {
+        if (!isDepositNavigationPending || isSheetPresented) {
+            return;
+        }
+
+        setIsDepositNavigationPending(false);
         navigation.navigate(YieldStackRoutes.YieldDeposit, route.params);
-    }, [navigation, route.params]);
+    }, [isDepositNavigationPending, isSheetPresented, navigation, route.params]);
     const handleCloseApproval = useCallback(() => {
         const isApprovalRemovedByPopToTop = navigation.getState().routes.length > 1;
 
@@ -481,7 +494,7 @@ export const YieldDepositApprovalScreen = () => {
                     </VStack>
                 </Form>
             </Box>
-            {approvalPendingTransaction && pendingModalProps && (
+            {displayedPendingTransaction && pendingModalProps && (
                 <YieldPendingTransactionModal
                     ref={pendingBottomSheetRef}
                     accountLabel={accountLabel}
@@ -492,6 +505,7 @@ export const YieldDepositApprovalScreen = () => {
                     amountTokenSymbol={pendingModalAmountTokenSymbol}
                     fee={pendingModalProps.fee}
                     isExploreDisabled={pendingModalProps.isExploreDisabled}
+                    onDismiss={pendingModalProps.onDismiss}
                     onExplorePress={pendingModalProps.onExplorePress}
                     submittedAt={pendingModalProps.submittedAt}
                     title={

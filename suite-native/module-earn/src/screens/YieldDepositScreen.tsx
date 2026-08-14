@@ -45,6 +45,7 @@ import { useRefreshYieldDepositAllowanceOnIdle } from '../hooks/useRefreshYieldD
 import { useResolvedYieldFlowData } from '../hooks/useResolvedYieldFlowData';
 import { useReturnToYieldDepositWrapStep } from '../hooks/useReturnToYieldDepositWrapStep';
 import { useShowYieldTransactionFailureAlert } from '../hooks/useShowYieldTransactionFailureAlert';
+import { useSingleReviewNavigation } from '../hooks/useSingleReviewNavigation';
 import { useYieldApprovedAmountDisplay } from '../hooks/useYieldApprovedAmountDisplay';
 import { useYieldCurrencyToggleAnalytics } from '../hooks/useYieldCurrencyToggleAnalytics';
 import { type PreparedYieldDepositAction, useYieldDepositFees } from '../hooks/useYieldDepositFees';
@@ -64,6 +65,7 @@ export const YieldDepositScreen = () => {
     const navigation = useNavigation<NavigationProps>();
     const dispatch = useDispatch();
     const isFocused = useIsFocused();
+    const navigateToReviewOnce = useSingleReviewNavigation();
     const navigateToInitialScreen = useNavigateToInitialScreen();
     const { analytics } = useServices(selectNativeAnalyticsDep);
 
@@ -125,6 +127,8 @@ export const YieldDepositScreen = () => {
     const allowanceAmount = session?.approval.allowanceAmount;
     const allowanceStatus = session?.approval.allowanceStatus;
     const {
+        displayedPendingTransaction,
+        isSheetPresented,
         pendingBottomSheetRef,
         pendingModalProps,
         pendingTransaction: actionPendingTransaction,
@@ -209,10 +213,16 @@ export const YieldDepositScreen = () => {
     });
 
     useEffect(() => {
+        // Replacing the screen while the sheet is still dismissing crashes Fabric — see
+        // `useYieldPendingSheet`.
+        if (isSheetPresented) {
+            return;
+        }
+
         if (session?.step === 'complete') {
             navigation.replace(YieldStackRoutes.YieldDepositComplete, route.params);
         }
-    }, [navigation, route.params, session?.step]);
+    }, [isSheetPresented, navigation, route.params, session?.step]);
 
     const handleGoBackToApproval = useCallback(() => {
         if (!flowKey || isDepositPending) {
@@ -278,22 +288,25 @@ export const YieldDepositScreen = () => {
             return;
         }
 
-        reportSimulationAction('continue');
-        dispatch(
-            stablecoinYieldActions.storeActionReviewData({
-                amount: simulationPreparedAction.amount,
-                flowKey,
-                flowType: 'deposit',
-                receiptAmount: simulationPreparedAction.receiptAmount,
-                unsignedTransaction: simulationPreparedAction.unsignedTransaction,
-            }),
-        );
-        closeSimulationBottomSheet();
-        navigation.navigate(YieldStackRoutes.YieldDepositReview, route.params);
+        navigateToReviewOnce(() => {
+            reportSimulationAction('continue');
+            dispatch(
+                stablecoinYieldActions.storeActionReviewData({
+                    amount: simulationPreparedAction.amount,
+                    flowKey,
+                    flowType: 'deposit',
+                    receiptAmount: simulationPreparedAction.receiptAmount,
+                    unsignedTransaction: simulationPreparedAction.unsignedTransaction,
+                }),
+            );
+            closeSimulationBottomSheet();
+            navigation.navigate(YieldStackRoutes.YieldDepositReview, route.params);
+        });
     }, [
         closeSimulationBottomSheet,
         dispatch,
         flowKey,
+        navigateToReviewOnce,
         navigation,
         reportSimulationAction,
         route.params,
@@ -496,17 +509,18 @@ export const YieldDepositScreen = () => {
                 </VStack>
             </Box>
 
-            {actionPendingTransaction && pendingModalProps && (
+            {displayedPendingTransaction && pendingModalProps && (
                 <YieldPendingTransactionModal
                     ref={pendingBottomSheetRef}
                     accountLabel={accountLabel}
                     accountSymbol={account.symbol}
-                    amount={actionPendingTransaction.amount}
+                    amount={displayedPendingTransaction.amount}
                     amountLabel={<Translation id="earn.yieldDepositFlowScreen.amountToDeposit" />}
                     amountTokenContract={route.params.tokenContract}
                     amountTokenSymbol={tokenSymbol}
                     fee={pendingModalProps.fee}
                     isExploreDisabled={pendingModalProps.isExploreDisabled}
+                    onDismiss={pendingModalProps.onDismiss}
                     onExplorePress={pendingModalProps.onExplorePress}
                     submittedAt={pendingModalProps.submittedAt}
                     title={<Translation id="earn.yieldDepositFlowScreen.depositPendingTitle" />}

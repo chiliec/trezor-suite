@@ -43,6 +43,7 @@ import { useMessageSystemWrappedNative } from '../hooks/useMessageSystemWrappedN
 import { useMessageSystemYield } from '../hooks/useMessageSystemYield';
 import { useResolvedYieldFlowData } from '../hooks/useResolvedYieldFlowData';
 import { useShowYieldTransactionFailureAlert } from '../hooks/useShowYieldTransactionFailureAlert';
+import { useSingleReviewNavigation } from '../hooks/useSingleReviewNavigation';
 import {
     type PreparedWrappedNativeTokenAction,
     useWrappedNativeTokenFees,
@@ -62,6 +63,7 @@ export const YieldDepositWrapScreen = () => {
     const navigation = useNavigation<NavigationProps>();
     const dispatch = useDispatch();
     const isFocused = useIsFocused();
+    const navigateToReviewOnce = useSingleReviewNavigation();
     const navigateToInitialScreen = useNavigateToInitialScreen();
     const { analytics } = useServices(selectNativeAnalyticsDep);
 
@@ -139,6 +141,8 @@ export const YieldDepositWrapScreen = () => {
     } = form.form;
 
     const {
+        displayedPendingTransaction,
+        isSheetPresented,
         pendingBottomSheetRef,
         pendingModalProps,
         pendingTransaction: wrapPendingTransaction,
@@ -181,6 +185,12 @@ export const YieldDepositWrapScreen = () => {
             return;
         }
 
+        // Replacing the screen while the sheet is still dismissing crashes Fabric — see
+        // `useYieldPendingSheet`.
+        if (isSheetPresented) {
+            return;
+        }
+
         if (session.step === 'approve') {
             navigation.replace(YieldStackRoutes.YieldDepositApproval, route.params);
 
@@ -190,7 +200,7 @@ export const YieldDepositWrapScreen = () => {
         if (session.step === 'action') {
             navigation.replace(YieldStackRoutes.YieldDeposit, route.params);
         }
-    }, [isFocused, navigation, route.params, session]);
+    }, [isFocused, isSheetPresented, navigation, route.params, session]);
 
     const handleSkip = useCallback(() => {
         if (!flowKey || isWrapPending) {
@@ -234,18 +244,20 @@ export const YieldDepositWrapScreen = () => {
                 return;
             }
 
-            dispatch(
-                stablecoinYieldActions.storeWrappedNativeReviewData({
-                    flowType: 'deposit',
-                    flowKey,
-                    step: 'wrap',
-                    amount: preparedWrap.amount,
-                    unsignedTransaction: preparedWrap.unsignedTransaction,
-                }),
-            );
-            navigation.navigate(YieldStackRoutes.YieldDepositWrapReview, route.params);
+            navigateToReviewOnce(() => {
+                dispatch(
+                    stablecoinYieldActions.storeWrappedNativeReviewData({
+                        flowType: 'deposit',
+                        flowKey,
+                        step: 'wrap',
+                        amount: preparedWrap.amount,
+                        unsignedTransaction: preparedWrap.unsignedTransaction,
+                    }),
+                );
+                navigation.navigate(YieldStackRoutes.YieldDepositWrapReview, route.params);
+            });
         },
-        [dispatch, flowKey, navigation, route.params],
+        [dispatch, flowKey, navigateToReviewOnce, navigation, route.params],
     );
 
     const simulation = useWrappedNativeTxSimulation({
@@ -415,16 +427,17 @@ export const YieldDepositWrapScreen = () => {
                     </VStack>
                 </Form>
             </Box>
-            {wrapPendingTransaction && pendingModalProps && (
+            {displayedPendingTransaction && pendingModalProps && (
                 <YieldPendingTransactionModal
                     ref={pendingBottomSheetRef}
                     accountLabel={accountLabel}
                     accountSymbol={account.symbol}
-                    amount={wrapPendingTransaction.amount}
+                    amount={displayedPendingTransaction.amount}
                     amountLabel={<Translation id="earn.wrapNativeToken.amountToWrap" />}
                     amountTokenSymbol={nativeSymbol}
                     fee={pendingModalProps.fee}
                     isExploreDisabled={pendingModalProps.isExploreDisabled}
+                    onDismiss={pendingModalProps.onDismiss}
                     onExplorePress={pendingModalProps.onExplorePress}
                     submittedAt={pendingModalProps.submittedAt}
                     title={<Translation id="earn.wrapNativeToken.pendingTransactionTitle" />}

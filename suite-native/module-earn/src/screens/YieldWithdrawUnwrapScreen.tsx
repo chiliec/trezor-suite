@@ -37,6 +37,7 @@ import { YieldWrappedNativeStepFooter } from '../components/YieldWrappedNativeSt
 import { useMessageSystemWrappedNative } from '../hooks/useMessageSystemWrappedNative';
 import { useResolvedYieldFlowData } from '../hooks/useResolvedYieldFlowData';
 import { useShowYieldTransactionFailureAlert } from '../hooks/useShowYieldTransactionFailureAlert';
+import { useSingleReviewNavigation } from '../hooks/useSingleReviewNavigation';
 import {
     type PreparedWrappedNativeTokenAction,
     useWrappedNativeTokenFees,
@@ -60,6 +61,7 @@ export const YieldWithdrawUnwrapScreen = () => {
     const dispatch = useDispatch();
     const isFocused = useIsFocused();
     const navigateToInitialScreen = useNavigateToInitialScreen();
+    const navigateToReviewOnce = useSingleReviewNavigation();
     const { analytics } = useServices(selectNativeAnalyticsDep);
 
     const flowType: YieldWithdrawFlowType = route.params.withdrawFlowType ?? 'withdraw';
@@ -274,18 +276,20 @@ export const YieldWithdrawUnwrapScreen = () => {
                 return;
             }
 
-            dispatch(
-                stablecoinYieldActions.storeWrappedNativeReviewData({
-                    flowType,
-                    flowKey,
-                    step: 'unwrap',
-                    amount: preparedUnwrap.amount,
-                    unsignedTransaction: preparedUnwrap.unsignedTransaction,
-                }),
-            );
-            navigation.navigate(YieldStackRoutes.YieldWithdrawUnwrapReview, route.params);
+            navigateToReviewOnce(() => {
+                dispatch(
+                    stablecoinYieldActions.storeWrappedNativeReviewData({
+                        flowType,
+                        flowKey,
+                        step: 'unwrap',
+                        amount: preparedUnwrap.amount,
+                        unsignedTransaction: preparedUnwrap.unsignedTransaction,
+                    }),
+                );
+                navigation.navigate(YieldStackRoutes.YieldWithdrawUnwrapReview, route.params);
+            });
         },
-        [dispatch, flowKey, flowType, navigation, route.params],
+        [dispatch, flowKey, flowType, navigateToReviewOnce, navigation, route.params],
     );
 
     const simulation = useWrappedNativeTxSimulation({

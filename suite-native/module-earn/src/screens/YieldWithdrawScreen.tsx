@@ -64,6 +64,7 @@ import { useMessageSystemYield } from '../hooks/useMessageSystemYield';
 import { useNavigateBackAnalytics } from '../hooks/useNavigateBackAnalytics';
 import { useResolvedYieldFlowData } from '../hooks/useResolvedYieldFlowData';
 import { useShowYieldTransactionFailureAlert } from '../hooks/useShowYieldTransactionFailureAlert';
+import { useSingleReviewNavigation } from '../hooks/useSingleReviewNavigation';
 import { useYieldPendingSheet } from '../hooks/useYieldPendingSheet';
 import { useYieldPendingTransactionTracking } from '../hooks/useYieldPendingTransactionTracking';
 import { useYieldSession } from '../hooks/useYieldSession';
@@ -110,6 +111,7 @@ export const YieldWithdrawScreen = () => {
     const [flowType, setFlowType] = useState<YieldWithdrawFlowType>(
         route.params.withdrawFlowType ?? 'withdraw',
     );
+    const navigateToReviewOnce = useSingleReviewNavigation();
     const isSharesInput = flowType === 'redeem';
     const amount = isSharesInput ? sharesAmount : assetAmount;
     const {
@@ -500,19 +502,21 @@ export const YieldWithdrawScreen = () => {
             },
         });
 
-        dispatch(stablecoinYieldActions.discardTransaction());
-        dispatch(
-            stablecoinYieldActions.storeActionReviewData({
-                amount: preparedAction.amount,
-                flowKey,
-                flowType,
-                receiptAmount: preparedAction.amount,
-                unsignedTransaction: preparedAction.unsignedTransaction,
-            }),
-        );
-        navigation.navigate(YieldStackRoutes.YieldWithdrawReview, {
-            ...route.params,
-            withdrawFlowType: flowType,
+        navigateToReviewOnce(() => {
+            dispatch(stablecoinYieldActions.discardTransaction());
+            dispatch(
+                stablecoinYieldActions.storeActionReviewData({
+                    amount: preparedAction.amount,
+                    flowKey,
+                    flowType,
+                    receiptAmount: preparedAction.amount,
+                    unsignedTransaction: preparedAction.unsignedTransaction,
+                }),
+            );
+            navigation.navigate(YieldStackRoutes.YieldWithdrawReview, {
+                ...route.params,
+                withdrawFlowType: flowType,
+            });
         });
     }, [
         account?.symbol,
@@ -523,6 +527,7 @@ export const YieldWithdrawScreen = () => {
         isWithdrawDisabled,
         isWithdrawReviewReady,
         isWrappedNativeVault,
+        navigateToReviewOnce,
         navigation,
         preparedAction,
         route.params,

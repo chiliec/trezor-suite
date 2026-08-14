@@ -37,6 +37,7 @@ import { YieldTxSimulationBottomSheet } from '../components/YieldTxSimulationBot
 import { useMessageSystemYield } from '../hooks/useMessageSystemYield';
 import { useNavigateBackAnalytics } from '../hooks/useNavigateBackAnalytics';
 import { useShowYieldTransactionFailureAlert } from '../hooks/useShowYieldTransactionFailureAlert';
+import { useSingleReviewNavigation } from '../hooks/useSingleReviewNavigation';
 import { type PreparedYieldClaimAction, useYieldClaimFees } from '../hooks/useYieldClaimFees';
 import { useYieldClaimRewards } from '../hooks/useYieldClaimRewards';
 import { useYieldPendingTransaction } from '../hooks/useYieldPendingTransaction';
@@ -53,6 +54,7 @@ export const YieldClaimScreen = () => {
     const navigation = useNavigation<NavigationProps>();
     const { accountKey, vault } = route.params;
     const isFocused = useIsFocused();
+    const navigateToReviewOnce = useSingleReviewNavigation();
     const dispatch = useDispatch();
     const { analytics } = useServices(selectNativeAnalyticsDep);
     const {
@@ -98,6 +100,8 @@ export const YieldClaimScreen = () => {
         waitForMerklToResolveClaim,
     } = useYieldClaimRewards({ account });
     const {
+        displayedPendingTransaction,
+        isSheetPresented,
         pendingBottomSheetRef,
         pendingModalProps,
         pendingTransaction: claimPendingTransaction,
@@ -168,10 +172,16 @@ export const YieldClaimScreen = () => {
     });
 
     useEffect(() => {
+        // Replacing the screen while the sheet is still dismissing crashes Fabric — see
+        // `useYieldPendingSheet`.
+        if (isSheetPresented) {
+            return;
+        }
+
         if (session?.step === 'complete') {
             navigation.replace(YieldStackRoutes.YieldClaimComplete, route.params);
         }
-    }, [navigation, route.params, session?.step]);
+    }, [isSheetPresented, navigation, route.params, session?.step]);
 
     const reportClaimEvent = useCallback(
         (payload: { action: 'continue' | 'cancel'; type: 'claim' | 'tx-simulation-modal' }) => {
@@ -215,23 +225,26 @@ export const YieldClaimScreen = () => {
             rewards: simulationPreparedAction.rewards,
         });
 
-        reportClaimEvent({ action: 'continue', type: 'tx-simulation-modal' });
+        navigateToReviewOnce(() => {
+            reportClaimEvent({ action: 'continue', type: 'tx-simulation-modal' });
 
-        dispatch(
-            stablecoinYieldActions.storeActionReviewData({
-                flowKey,
-                flowType: 'claim',
-                rewards: rewardsSnapshot,
-                unsignedTransaction: simulationPreparedAction.unsignedTransaction,
-            }),
-        );
-        closeSimulationBottomSheet();
-        navigation.navigate(YieldStackRoutes.YieldClaimReview, route.params);
+            dispatch(
+                stablecoinYieldActions.storeActionReviewData({
+                    flowKey,
+                    flowType: 'claim',
+                    rewards: rewardsSnapshot,
+                    unsignedTransaction: simulationPreparedAction.unsignedTransaction,
+                }),
+            );
+            closeSimulationBottomSheet();
+            navigation.navigate(YieldStackRoutes.YieldClaimReview, route.params);
+        });
     }, [
         account,
         closeSimulationBottomSheet,
         dispatch,
         flowKey,
+        navigateToReviewOnce,
         navigation,
         reportClaimEvent,
         route.params,
@@ -346,13 +359,14 @@ export const YieldClaimScreen = () => {
                 </VStack>
             </Box>
 
-            {claimPendingTransaction && pendingModalProps && (
+            {displayedPendingTransaction && pendingModalProps && (
                 <YieldPendingTransactionModal
                     ref={pendingBottomSheetRef}
                     accountLabel={accountLabel}
                     accountSymbol={account.symbol}
                     fee={pendingModalProps.fee}
                     isExploreDisabled={pendingModalProps.isExploreDisabled}
+                    onDismiss={pendingModalProps.onDismiss}
                     onExplorePress={pendingModalProps.onExplorePress}
                     submittedAt={pendingModalProps.submittedAt}
                     title={<Translation id="earn.yieldClaimFlowScreen.claimPendingTitle" />}

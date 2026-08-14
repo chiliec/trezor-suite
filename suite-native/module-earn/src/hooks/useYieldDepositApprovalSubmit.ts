@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { useDispatch, useStore } from 'react-redux';
 
 import { useNavigation } from '@react-navigation/native';
@@ -21,6 +21,7 @@ import {
 
 import { type ResolvedYieldFlowData } from './useResolvedYieldFlowData';
 import { useShowYieldAlert } from './useShowYieldAlert';
+import { useSingleReviewNavigation } from './useSingleReviewNavigation';
 import { type YieldApprovalLimitType } from '../types';
 import { prepareYieldAllowanceReviewTransactionThunk } from '../yieldApprovalThunks';
 
@@ -45,15 +46,20 @@ export const useYieldDepositApprovalSubmit = ({
     const store = useStore<StablecoinYieldRootState>();
     const showYieldAlert = useShowYieldAlert();
     const [isCheckingApproval, setIsCheckingApproval] = useState(false);
+    // `isCheckingApproval` is state, so two taps in the same frame both read it as `false` and both
+    // reach the device. Broadcasting has to be idempotent per press, hence the ref.
+    const isSubmittingRef = useRef(false);
+    const navigateToReviewOnce = useSingleReviewNavigation();
 
     const handleSubmitApproval = useCallback(
         async (amount: string) => {
-            if (isCheckingApproval || !flowData || !flowKey) {
+            if (isCheckingApproval || isSubmittingRef.current || !flowData || !flowKey) {
                 return;
             }
 
             const sessionParams = { flowType: 'deposit' as const, flowKey };
 
+            isSubmittingRef.current = true;
             setIsCheckingApproval(true);
 
             try {
@@ -165,12 +171,17 @@ export const useYieldDepositApprovalSubmit = ({
                     return;
                 }
 
-                navigation.navigate(YieldStackRoutes.YieldDepositApprovalReview, {
-                    ...routeParams,
-                    amount,
-                    approvalLimitType,
-                });
+                navigateToReviewOnce(() =>
+                    navigation.navigate(YieldStackRoutes.YieldDepositApprovalReview, {
+                        ...routeParams,
+                        amount,
+                        approvalLimitType,
+                    }),
+                );
             } finally {
+                // Released once the attempt settles, so a deliberate retry after a failure still
+                // works — only concurrent invocations are blocked.
+                isSubmittingRef.current = false;
                 setIsCheckingApproval(false);
             }
         },
@@ -180,6 +191,7 @@ export const useYieldDepositApprovalSubmit = ({
             flowData,
             flowKey,
             isCheckingApproval,
+            navigateToReviewOnce,
             navigation,
             routeParams,
             showYieldAlert,

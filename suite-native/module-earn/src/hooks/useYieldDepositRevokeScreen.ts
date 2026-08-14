@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useDispatch } from 'react-redux';
 
 import { type RouteProp, useIsFocused, useNavigation, useRoute } from '@react-navigation/native';
@@ -21,6 +21,7 @@ import { useRefreshYieldDepositAllowanceOnIdle } from './useRefreshYieldDepositA
 import { useResolvedYieldFlowData } from './useResolvedYieldFlowData';
 import { useShowYieldAlert } from './useShowYieldAlert';
 import { useShowYieldTransactionFailureAlert } from './useShowYieldTransactionFailureAlert';
+import { useSingleReviewNavigation } from './useSingleReviewNavigation';
 import { type YieldAllowanceFeeTransaction, useYieldAllowanceFees } from './useYieldAllowanceFees';
 import { useYieldApprovedAmountDisplay } from './useYieldApprovedAmountDisplay';
 import { useYieldPendingTransaction } from './useYieldPendingTransaction';
@@ -77,6 +78,8 @@ export const useYieldDepositRevokeScreen = () => {
     const [hasShownMissingAmountError, setHasShownMissingAmountError] = useState(false);
     const [hasShownRevokePreparationError, setHasShownRevokePreparationError] = useState(false);
     const [isPreparingReview, setIsPreparingReview] = useState(false);
+    const isPreparingReviewRef = useRef(false);
+    const navigateToReviewOnce = useSingleReviewNavigation();
     const isPreparingRevoke = session?.approval.isSubmitting ?? false;
     const hasRevokeRequestAmount = isPositiveBalance(revokeRequestAmount);
     const shouldShowLowLimitWarning = !!route.params.shouldShowLowLimitWarning;
@@ -265,10 +268,13 @@ export const useYieldDepositRevokeScreen = () => {
     ]);
 
     const handleReviewAndSign = useCallback(async () => {
-        if (!canReviewRevoke || resolutionStatus !== 'resolved') {
+        // `canReviewRevoke` is derived from state, so two taps in the same frame both pass it and
+        // both reach the device. Hence the ref.
+        if (!canReviewRevoke || isPreparingReviewRef.current || resolutionStatus !== 'resolved') {
             return;
         }
 
+        isPreparingReviewRef.current = true;
         setIsPreparingReview(true);
 
         try {
@@ -291,18 +297,23 @@ export const useYieldDepositRevokeScreen = () => {
                 return;
             }
 
-            navigation.navigate(YieldStackRoutes.YieldDepositRevokeReview, {
-                ...route.params,
-                amount: approvedAllowanceAmount,
-                isAmountUnlimited: isApprovedAmountUnlimited,
-            });
+            navigateToReviewOnce(() =>
+                navigation.navigate(YieldStackRoutes.YieldDepositRevokeReview, {
+                    ...route.params,
+                    amount: approvedAllowanceAmount,
+                    isAmountUnlimited: isApprovedAmountUnlimited,
+                }),
+            );
         } finally {
+            // Released once the attempt settles, so a deliberate retry after a failure still works.
+            isPreparingReviewRef.current = false;
             setIsPreparingReview(false);
         }
     }, [
         approvedAllowanceAmount,
         canReviewRevoke,
         dispatch,
+        navigateToReviewOnce,
         flowData,
         flowKey,
         isApprovedAmountUnlimited,
