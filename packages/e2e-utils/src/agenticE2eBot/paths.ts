@@ -12,6 +12,9 @@ export const agenticArtifactPath = (fileName: string): string =>
     join(AGENTIC_E2E_BOT_DIR, 'reports', fileName);
 
 export const AGENTIC_BROWSER_DIR = join(AGENTIC_E2E_BOT_DIR, 'reports/browser');
+export const AGENTIC_CONTEXT_IMAGES_DIR = join(AGENTIC_E2E_BOT_DIR, 'reports/context-images');
+export const AGENTIC_CONTEXT_IMAGES_REPO_PATH =
+    'packages/e2e-utils/src/agenticE2eBot/reports/context-images';
 
 export function readArtifactJson(fileName: string): unknown {
     return JSON.parse(readFileSync(agenticArtifactPath(fileName), 'utf-8'));

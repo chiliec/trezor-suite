@@ -29,6 +29,8 @@ export const PrContextSchema = z.object({
         .nullable(),
     deviceModel: DeviceModelSchema,
     suiteUrl: z.string(),
+    // Local paths under packages/e2e-utils/src/agenticE2eBot/reports/context-images/.
+    contextImages: z.array(z.string()),
 });
 
 export const ScreenshotBasenameSchema = z

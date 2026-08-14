@@ -27,6 +27,7 @@ function buildAgentPrompt(context: PrContext): string {
             body: context.issue.body,
         },
         deviceModel: context.deviceModel,
+        contextImages: context.contextImages,
     };
 
     return [
