@@ -24,6 +24,7 @@
         "agentic-e2e:context": "tsx src/agenticE2eBot/context.ts",
         "agentic-e2e:setup": "tsx src/agenticE2eBot/setup.ts",
         "agentic-e2e:run": "tsx src/agenticE2eBot/run.ts",
+        "agentic-e2e:comment": "tsx src/agenticE2eBot/comment.ts",
         "agentic-e2e": "yarn agentic-e2e:context && yarn agentic-e2e:setup && yarn agentic-e2e:run",
         "gh-pr-stats": "tsx ./src/ghPrStats/index.ts",
         "github:create:project": "tsx src/githubReporter/scriptCreateProject.ts",

@@ -1,0 +1,198 @@
+name: "[Test] Agentic E2E Bot"
+
+# Comment-triggered agentic E2E testing of PR preview deployments.
+# A Playwright script performs wallet setup + Suite onboarding deterministically,
+# then a Claude Code agent (Playwright + trezor-emulator MCPs) tests the PR
+# and reports back as a PR comment.
+#
+# Usage: comment `/e2e-test [model=T3T1]` on a PR,
+# or on an issue — the bot then tests the issue's linked PR.
+# Locally: TARGET=<pr-or-issue-url> DEVICE_MODEL=T3T1 yarn workspace @trezor/e2e-utils agentic-e2e
+
+on:
+  issue_comment:
+    types: [created]
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "PR or issue URL (https://github.com/trezor/trezor-suite/pull/123)"
+        required: true
+        type: string
+      model:
+        description: "Emulator device model"
+        required: true
+        default: "T3W1"
+        type: choice
+        options:
+          - T1B1
+          - T2T1
+          - T3B1
+          - T3T1
+          - T3W1
+
+permissions:
+  contents: read
+
+concurrency:
+  group: agentic-e2e-${{ github.event.issue.number || inputs.target }}
+  cancel-in-progress: true
+
+jobs:
+  agentic-e2e:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    if: >
+      github.repository == 'trezor/trezor-suite' &&
+      (github.event_name == 'workflow_dispatch' ||
+        (startsWith(github.event.comment.body, '/e2e-test') &&
+          contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association)))
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      COMPOSE_FILE: ./docker/docker-compose.suite-ci-e2e.yml
+      AGENTIC_E2E_REPORTS: packages/e2e-utils/src/agenticE2eBot/reports
+
+    steps:
+      - name: Generate GitHub App token
+        id: trezor-bot-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3
+        with:
+          client-id: ${{ secrets.TREZOR_BOT_APP_ID }}
+          private-key: ${{ secrets.TREZOR_BOT_PRIVATE_KEY }}
+
+      - name: React to triggering comment
+        if: github.event_name == 'issue_comment'
+        env:
+          GH_TOKEN: ${{ steps.trezor-bot-token.outputs.token }}
+        run: |
+          gh api "repos/${{ github.repository }}/issues/comments/${{ github.event.comment.id }}/reactions" \
+            -f content=eyes --silent
+
+      # Harness runs from the default branch (develop), never from the PR — a PR
+      # must not be able to hijack the bot's prompt or harness code.
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v6
+        with:
+          fetch-depth: 1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+        with:
+          node-version-file: ".nvmrc"
+          cache: yarn
+
+      - name: Cache node_modules
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v5
+        with:
+          path: node_modules
+          key: node_modules-agentic-e2e-${{ hashFiles('yarn.lock') }}
+
+      - name: Install dependencies
+        run: yarn workspaces focus @trezor/e2e-utils @trezor/suite-e2e
+
+      - name: Install Playwright Chromium
+        run: yarn workspace @trezor/suite-e2e exec playwright install chromium --with-deps
+
+      - name: Install Claude sandbox dependencies
+        run: sudo apt-get update && sudo apt-get install --yes bubblewrap socat
+
+      # trezor-user-env also serves the trezor-emulator MCP on :9003
+      # (started by src/main.py in the pinned image, host networking).
+      - name: Start trezor-user-env
+        run: |
+          docker compose pull --quiet trezor-user-env-unix
+          docker compose up -d trezor-user-env-unix
+
+      - name: Resolve device model
+        id: device-model
+        env:
+          COMMENT_BODY: ${{ github.event.comment.body }}
+          DISPATCH_MODEL: ${{ inputs.model }}
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            model="${DISPATCH_MODEL:-T3W1}"
+          else
+            # `/e2e-test [model=T3T1]` — first model= token, same split as the old harness parser.
+            model=""
+            for token in $COMMENT_BODY; do
+              case "$token" in
+                model=*)
+                  model="${token#model=}"
+                  break
+                  ;;
+              esac
+            done
+            model="${model:-T3W1}"
+          fi
+
+          case "$model" in
+            *[!A-Z0-9]*)
+              echo "invalid DEVICE_MODEL '$model'"
+              exit 1
+              ;;
+          esac
+
+          echo "model=$model" >> "$GITHUB_OUTPUT"
+
+      - name: Resolve PR context
+        env:
+          GH_TOKEN: ${{ steps.trezor-bot-token.outputs.token }}
+          TARGET: ${{ github.event.issue.html_url || inputs.target }}
+          DEVICE_MODEL: ${{ steps.device-model.outputs.model }}
+        run: yarn workspace @trezor/e2e-utils agentic-e2e:context
+
+      - name: Wallet setup and Suite onboarding
+        env:
+          HEADLESS: "true"
+          AGENT_GITHUB_ACTION: "true"
+          AGENTIC_E2E_PASSPHRASE: ${{ secrets.E2E_TEST_PASSPHRASE }}
+        run: yarn workspace @trezor/e2e-utils agentic-e2e:setup
+
+      - name: Run agentic E2E test
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.E2E_FIX_EXECUTION_CLAUDE_API_KEY }}
+        run: yarn workspace @trezor/e2e-utils agentic-e2e:run
+
+      - name: Configure AWS credentials
+        if: ${{ !cancelled() }}
+        uses: aws-actions/configure-aws-credentials@254c19bd240aabef8777f48595e9d2d7b972184b # v6
+        with:
+          role-to-assume: "arn:aws:iam::538326561891:role/gh_actions_trezor_suite_dev_deploy"
+          aws-region: "eu-central-1"
+
+      # Browser captures are hosted on the same bucket as previews.
+      - name: Upload issue screenshots to S3
+        if: ${{ !cancelled() }}
+        run: |
+          result="${{ env.AGENTIC_E2E_REPORTS }}/test-result.json"
+          if [ -f "$result" ]; then
+            jq -r '.issues[].screenshots[]' "$result" | while IFS= read -r screenshot; do
+              aws s3 cp "${{ env.AGENTIC_E2E_REPORTS }}/browser/$screenshot" \
+                "s3://dev.suite.sldev.cz/e2e/agentic-e2e/${{ github.run_id }}/browser/$screenshot"
+            done
+          else
+            echo "No test result produced."
+          fi
+
+      - name: Post PR comment
+        if: ${{ !cancelled() }}
+        env:
+          GH_TOKEN: ${{ steps.trezor-bot-token.outputs.token }}
+          TARGET: ${{ github.event.issue.html_url || inputs.target }}
+          SCREENSHOT_BASE_URL: "https://dev.suite.sldev.cz/e2e/agentic-e2e/${{ github.run_id }}/browser"
+        run: yarn workspace @trezor/e2e-utils agentic-e2e:comment
+
+      - name: Upload test artifacts
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: agentic-e2e-report
+          path: |
+            packages/e2e-utils/src/agenticE2eBot/reports/context.json
+            packages/e2e-utils/src/agenticE2eBot/reports/test-result.json
+          if-no-files-found: warn
+
+      - name: Docker Compose Down
+        if: always()
+        run: docker compose down
