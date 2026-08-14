@@ -1,4 +1,5 @@
 import { spawn } from 'node:child_process';
+import { z } from 'zod';
 
 import { REPO_ROOT } from './paths';
 
@@ -12,6 +13,30 @@ type RunClaudeOptions = {
     input: string;
     timeoutMs?: number;
 };
+
+const ClaudeResultSchema = z.object({
+    type: z.string().optional(),
+    subtype: z.string().optional(),
+    result: z.string().optional(),
+    structured_output: z.unknown().optional(),
+});
+
+// Claude CLI stdout (`stream-json` NDJSON) → result envelope.
+export function processAgentOutput(rawOutput: string): z.infer<typeof ClaudeResultSchema> {
+    for (const line of rawOutput.split('\n')) {
+        const trimmed = line.trim();
+        if (!trimmed) {
+            continue;
+        }
+
+        const parsed = ClaudeResultSchema.safeParse(JSON.parse(trimmed));
+        if (parsed.success && parsed.data.type === 'result') {
+            return parsed.data;
+        }
+    }
+
+    throw new Error('no result entry in claude stdout');
+}
 
 // Spawn Claude Code, echo its NDJSON stream as progress, return stdout when it exits.
 export function runClaude({ args, input, timeoutMs }: RunClaudeOptions): Promise<ClaudeRunResult> {

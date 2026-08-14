@@ -1,6 +1,12 @@
 import { z } from 'zod';
 
-import { toCliJsonSchema } from '../claudeCli/schemas';
+// Strip the top-level `$schema` which breaks Agent's attempt of JSON output.
+const toCliJsonSchema = (schema: z.ZodType) => {
+    const jsonSchema = z.toJSONSchema(schema);
+    delete jsonSchema.$schema;
+
+    return jsonSchema;
+};
 
 export const DEVICE_MODELS = ['T1B1', 'T2T1', 'T3B1', 'T3T1', 'T3W1'] as const;
 
@@ -12,7 +18,7 @@ export const PrContextSchema = z.object({
     prUrl: z.string(),
     prTitle: z.string(),
     prBody: z.string(),
-    // Linked GitHub issue when resolved (trigger issue, or closingIssuesReferences on the PR).
+    // Closing issue from the PR's closingIssuesReferences, when present.
     issue: z
         .object({
             number: z.number().int().positive(),

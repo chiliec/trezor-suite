@@ -19,9 +19,8 @@ The environment is fully set up before you start:
 - The Trezor emulator is seeded with a known test mnemonic (no PIN), bridge is
   running.
 - BTC, ETH, and SOL networks are enabled and account discovery has completed — the
-  wallet has accounts and (if funded) balances. A standard wallet is always
-  present; if this run was configured with a passphrase, a hidden wallet is
-  already open on the dashboard (check the device switcher if unsure).
+  wallet has accounts and (if funded) balances. A hidden wallet is already open
+  on the dashboard (check the device switcher if unsure).
 - Device security checks (firmware hash, firmware revision, device authenticity,
   OPTIGA device check) are already disabled in Suite settings.
 
@@ -118,8 +117,8 @@ are not downloaded** — rely on textual repro steps.
 
 ## Screenshots (mandatory evidence)
 
-The PR comment is the only deliverable — screenshots you capture are uploaded by
-the harness and embedded in it.
+Capture kebab-case PNGs under `packages/e2e-utils/src/agenticE2eBot/reports/browser/` —
+they are the local evidence for each issue.
 
 - Browser: always capture with an explicit `filename` under the browser dir,
   e.g.
@@ -127,16 +126,11 @@ the harness and embedded in it.
   Capture before interacting with each distinct UI element, after each state change,
   and every error, modal, dropdown, and bug.
 - Emulator: `emulator_screenshot()` whenever the browser shows a device-action
-  prompt. Emulator screenshots auto-save under `.trezor-emulator-mcp-screenshots/`;
-  copy the important ones into `packages/e2e-utils/src/agenticE2eBot/reports/browser/`.
-- Filenames: descriptive kebab-case slugs (`send-form-error.png`) — they become
-  part of the public image URL in the PR comment.
+  prompt.
+- Filenames: descriptive kebab-case slugs (`send-form-error.png`).
 - **Every issue must have at least one proving screenshot.** List the filenames
   (relative to `packages/e2e-utils/src/agenticE2eBot/reports/browser/`, e.g. `"send-form-error.png"`) in the issue's
-  `screenshots` array in your structured output. Only referenced PNGs are uploaded,
-  and the comment embeds a limited number of them.
-- Before finishing, verify every screenshot listed in `screenshots` arrays exists
-  on disk under `packages/e2e-utils/src/agenticE2eBot/reports/browser/`.
+  `screenshots` array in your structured output.
 
 Severity levels for issues: **critical** blocks core functionality / data loss /
 security · **high** feature broken but workaround exists or affects many users ·
@@ -146,11 +140,10 @@ case · **info** observation, not a defect. Issue IDs: `BUG-1`, `UX-1`, …
 ## Output contract
 
 - You own: the browser captures under `packages/e2e-utils/src/agenticE2eBot/reports/browser/`.
-- The harness owns the machine-readable verdict and the PR comment: your final
-  structured output (enforced by the CLI JSON schema) must contain the overall
-  `result` (`pass` | `partial` | `fail` | `blocked`), a plain-text `summary`
-  (written for a GitHub comment — concise, markdown allowed), and the `issues`
-  array with `screenshots` as described above.
+- The harness owns the machine-readable verdict: your final structured output
+  (enforced by the CLI JSON schema) must contain the overall `result`
+  (`pass` | `partial` | `fail` | `blocked`), a plain-text `summary`, and the
+  `issues` array with `screenshots` as described above.
 - Verdict semantics: `pass` = everything tested works · `partial` = feature works
   with issues found · `fail` = feature broken / untestable due to product bugs ·
   `blocked` = environment prevented testing (say so explicitly in `summary`).

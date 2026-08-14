@@ -11,8 +11,7 @@ export const REPO_ROOT = resolve(AGENTIC_E2E_BOT_DIR, '../../../..');
 export const agenticArtifactPath = (fileName: string): string =>
     join(AGENTIC_E2E_BOT_DIR, 'reports', fileName);
 
-export const agenticBrowserPath = (fileName = ''): string =>
-    join(AGENTIC_E2E_BOT_DIR, 'reports/browser', fileName);
+export const AGENTIC_BROWSER_DIR = join(AGENTIC_E2E_BOT_DIR, 'reports/browser');
 
 export function readArtifactJson(fileName: string): unknown {
     return JSON.parse(readFileSync(agenticArtifactPath(fileName), 'utf-8'));

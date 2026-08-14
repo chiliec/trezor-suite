@@ -1,6 +1,6 @@
 import { config as loadDotenv } from 'dotenv';
 import { spawn } from 'node:child_process';
-import { existsSync, mkdirSync, rmSync } from 'node:fs';
+import { existsSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { error, log } from '../logger';
@@ -9,7 +9,7 @@ import {
     killHarnessBrowserOnExitSignals,
     writeBrowserState,
 } from './browserState';
-import { REPO_ROOT, agenticArtifactPath, agenticBrowserPath, readArtifactJson } from './paths';
+import { REPO_ROOT, agenticArtifactPath, readArtifactJson } from './paths';
 import { PrContextSchema } from './schemas';
 
 const SETUP_SPEC = 'agentic/agenticSetup.test.ts';
@@ -69,7 +69,6 @@ async function runOnboardingSpec({
 
 async function main(): Promise<void> {
     killHarnessBrowserOnExitSignals();
-    mkdirSync(agenticBrowserPath(), { recursive: true });
     loadDotenv({ path: join(REPO_ROOT, 'packages/e2e-utils/.env'), quiet: true });
 
     const context = PrContextSchema.parse(readArtifactJson('context.json'));

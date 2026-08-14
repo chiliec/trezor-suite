@@ -1,16 +1,15 @@
 import { mkdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { processAgentOutput } from '../claudeCli/processOutput';
 import { error, log } from '../logger';
 import { killHarnessBrowser, killHarnessBrowserOnExitSignals } from './browserState';
 import {
+    AGENTIC_BROWSER_DIR,
     AGENTIC_E2E_BOT_DIR,
-    agenticBrowserPath,
     readArtifactJson,
     writeArtifactJson,
 } from './paths';
-import { runClaude } from './runClaude';
+import { processAgentOutput, runClaude } from './runClaude';
 import { type PrContext, PrContextSchema, TestResultJsonSchema, TestResultSchema } from './schemas';
 
 const DEFAULT_BUDGET_USD = '10';
@@ -43,7 +42,7 @@ async function runTest(): Promise<number> {
     const timeoutMs = Number(process.env.AGENTIC_E2E_TIMEOUT_MIN ?? DEFAULT_TIMEOUT_MIN) * 60_000;
 
     const context = PrContextSchema.parse(readArtifactJson('context.json'));
-    mkdirSync(agenticBrowserPath(), { recursive: true });
+    mkdirSync(AGENTIC_BROWSER_DIR, { recursive: true });
 
     log(`━━━ Agentic E2E test — PR #${context.prNumber} ━━━`);
     log(`Suite: ${context.suiteUrl}`);

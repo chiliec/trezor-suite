@@ -2,12 +2,12 @@ import { execFileSync } from 'node:child_process';
 
 import { error, log } from '../logger';
 import { writeArtifactJson } from './paths';
-import { DEVICE_MODELS, type DeviceModel, type PrContext } from './schemas';
+import { DeviceModelSchema, type PrContext } from './schemas';
 import { parsePrNumber } from './target';
 
 const REPO = 'trezor/trezor-suite';
 const PREVIEW_SUITE_URL_BASE = 'https://dev.suite.sldev.cz/suite-web';
-const DEFAULT_MODEL: DeviceModel = 'T3W1';
+const DEFAULT_MODEL = 'T3W1';
 const MAX_BODY_CHARS = 4000;
 
 type PullRequest = {
@@ -25,18 +25,6 @@ type Issue = {
     body: string;
     url: string;
 };
-
-function parseDeviceModel(value: string | undefined): DeviceModel {
-    if (!value) {
-        return DEFAULT_MODEL;
-    }
-
-    if ((DEVICE_MODELS as readonly string[]).includes(value)) {
-        return value as DeviceModel;
-    }
-
-    throw new Error(`unknown model '${value}' — expected one of ${DEVICE_MODELS.join(', ')}`);
-}
 
 function loadPullRequest(prNumber: number): PullRequest {
     const data: {
@@ -81,7 +69,15 @@ function loadIssue(issueNumber: number): Issue {
     } = JSON.parse(
         execFileSync(
             'gh',
-            ['issue', 'view', String(issueNumber), '--repo', REPO, '--json', 'number,title,body,url'],
+            [
+                'issue',
+                'view',
+                String(issueNumber),
+                '--repo',
+                REPO,
+                '--json',
+                'number,title,body,url',
+            ],
             { encoding: 'utf-8', maxBuffer: 16 * 1024 * 1024 },
         ),
     );
@@ -113,8 +109,12 @@ function stripBotSections(body: string | undefined): string {
         /<!--\s*([\w:-]+):START\s*-->(?:(?!<!--\s*[\w:-]+:(?:START|END)\s*-->)[\s\S])*?<!--\s*\1:END\s*-->/gi;
     let stripped = body ?? '';
 
-    while (innermost.test(stripped)) {
-        stripped = stripped.replace(innermost, '');
+    for (;;) {
+        const next = stripped.replace(innermost, '');
+        if (next === stripped) {
+            break;
+        }
+        stripped = next;
     }
 
     return stripped.trim().slice(0, MAX_BODY_CHARS);
@@ -122,7 +122,7 @@ function stripBotSections(body: string | undefined): string {
 
 function main(): void {
     const prNumber = parsePrNumber(process.env.TARGET);
-    const deviceModel = parseDeviceModel(process.env.DEVICE_MODEL);
+    const deviceModel = DeviceModelSchema.parse(process.env.DEVICE_MODEL ?? DEFAULT_MODEL);
 
     const pr = loadPullRequest(prNumber);
     const issue = loadClosingIssue(pr);
