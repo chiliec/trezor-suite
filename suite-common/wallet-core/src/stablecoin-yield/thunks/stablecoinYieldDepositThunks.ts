@@ -14,6 +14,7 @@ import { getApprovalRequestAmount } from './stablecoinYieldApprovalThunks';
 import { type AccountsRootState } from '../../accounts/accountsReducer';
 import { fetchAllowance } from '../../allowance/fetchAllowance';
 import { type FeesRootState, selectRawNetworkFeeInfo } from '../../fees/feesReducer';
+import { type UpdateFeeInfoThunkState, updateFeeInfoThunk } from '../../fees/feesThunks';
 import { ethereumGetCurrentNonceThunk } from '../../send/sendFormEthereumThunks';
 import { type TransactionsRootState } from '../../transactions/transactionsReducerTypes';
 import { STABLECOIN_YIELD_PREFIX } from '../stablecoinYieldConstants';
@@ -66,7 +67,8 @@ type ComposeYieldDepositTransactionPayload = {
 };
 type ComposeYieldDepositTransactionThunkState = AccountsRootState &
     FeesRootState &
-    TransactionsRootState;
+    TransactionsRootState &
+    UpdateFeeInfoThunkState;
 
 export const composeYieldDepositTransactionThunk = createThunk<
     PrepareYieldDepositResult,
@@ -149,9 +151,18 @@ export const composeYieldDepositTransactionThunk = createThunk<
             return { type: 'error', reason: 'fee-estimation-failed' } as const;
         }
 
+        let rawFeeInfo = selectRawNetworkFeeInfo(getState(), account.symbol);
+
+        // Fee info may be missing when the network was enabled after app init. Fetch it on demand
+        // instead of failing the flow.
+        if (!rawFeeInfo) {
+            await dispatch(updateFeeInfoThunk({ networkSymbol: account.symbol }));
+            rawFeeInfo = selectRawNetworkFeeInfo(getState(), account.symbol);
+        }
+
         const feeInfo = getConvertedOrDefaultFeeInfo({
             networkType: account.networkType,
-            feeInfo: selectRawNetworkFeeInfo(getState(), account.symbol),
+            feeInfo: rawFeeInfo,
         });
         const normalLevel =
             feeInfo.levels.find(level => level.label === 'normal') ?? feeInfo.levels[0];

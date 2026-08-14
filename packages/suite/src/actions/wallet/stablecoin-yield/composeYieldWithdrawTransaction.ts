@@ -9,6 +9,7 @@ import {
     buildYieldWithdrawCalldata,
     estimateYieldFeeLevel,
     selectRawNetworkFeeInfo,
+    updateFeeInfoThunk,
 } from '@suite-common/wallet-core';
 import { ethereumGetCurrentNonceThunk } from '@suite-common/wallet-core/src/send/sendFormEthereumThunks';
 import { type Account } from '@suite-common/wallet-types';
@@ -83,14 +84,23 @@ export const composeYieldWithdrawTransaction = async ({
 
     const gasLimit = estimatedFeeLevel.payload.feeLimit;
 
+    let rawFeeInfo = selectRawNetworkFeeInfo(getState(), account.symbol);
+
+    // Fee info may be missing when the network was enabled after app init. Fetch it on demand
+    // instead of failing the flow.
+    if (!rawFeeInfo) {
+        await dispatch(updateFeeInfoThunk({ networkSymbol: account.symbol }));
+        rawFeeInfo = selectRawNetworkFeeInfo(getState(), account.symbol);
+    }
+
     const feeInfo = getConvertedOrDefaultFeeInfo({
         networkType: account.networkType,
-        feeInfo: selectRawNetworkFeeInfo(getState(), account.symbol),
+        feeInfo: rawFeeInfo,
     });
     const normalLevel = feeInfo.levels.find(level => level.label === 'normal') ?? feeInfo.levels[0];
 
     if (!normalLevel) {
-        throw new Error(`Fee info is not available.`);
+        return err('fee-estimation-failed');
     }
 
     const unsignedTx = buildYieldUnsignedTransaction({

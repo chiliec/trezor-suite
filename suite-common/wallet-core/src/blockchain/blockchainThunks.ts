@@ -47,7 +47,8 @@ import {
     fetchAndUpdateAccountThunk,
     reportWalletBalanceThunk,
 } from '../accounts/accountsThunks';
-import { preloadFeeInfoThunk } from '../fees/feesThunks';
+import { type FeesRootState, selectRawNetworkFeeInfo } from '../fees/feesSelectors';
+import { preloadFeeInfoThunk, updateFeeInfoThunk } from '../fees/feesThunks';
 import {
     type WalletSettingsRootState,
     selectBitcoinAmountUnit,
@@ -322,7 +323,7 @@ export const syncAccountsWithBlockchainThunk = createThunk<
     },
 );
 
-type OnBlockchainConnectThunkState = SyncAccountsWithBlockchainThunkState;
+type OnBlockchainConnectThunkState = SyncAccountsWithBlockchainThunkState & FeesRootState;
 type OnBlockchainConnectThunkDeps = {
     services: AnalyticsDep & GetIsWindowVisibleDep & GetTradedAccountKeysDep;
 };
@@ -334,17 +335,26 @@ export const onBlockchainConnectThunk = createThunk<
         state: OnBlockchainConnectThunkState;
         extra: OnBlockchainConnectThunkDeps;
     }
->(`${BLOCKCHAIN_MODULE_PREFIX}/onBlockchainConnectThunk`, async (symbol, { dispatch }) => {
-    const network = getNetworkOptional(symbol.toLowerCase());
-    if (!network) return;
+>(
+    `${BLOCKCHAIN_MODULE_PREFIX}/onBlockchainConnectThunk`,
+    async (symbol, { dispatch, getState }) => {
+        const network = getNetworkOptional(symbol.toLowerCase());
+        if (!network) return;
 
-    await dispatch(
-        subscribeBlockchainThunk({ symbol: network.symbol, fiatRates: true, onConnect: true }),
-    );
-    // update accounts for connected network
-    await dispatch(syncAccountsWithBlockchainThunk(network.symbol));
-    dispatch(blockchainActions.connected(network.symbol));
-});
+        // Networks enabled after app init are not covered by preloadFeeInfoThunk, so fee-dependent
+        // flows would otherwise compose against empty fee state.
+        if (!selectRawNetworkFeeInfo(getState(), network.symbol)) {
+            await dispatch(updateFeeInfoThunk({ networkSymbol: network.symbol }));
+        }
+
+        await dispatch(
+            subscribeBlockchainThunk({ symbol: network.symbol, fiatRates: true, onConnect: true }),
+        );
+        // update accounts for connected network
+        await dispatch(syncAccountsWithBlockchainThunk(network.symbol));
+        dispatch(blockchainActions.connected(network.symbol));
+    },
+);
 
 type OnBlockMinedThunkState = SyncAccountsWithBlockchainThunkState;
 type OnBlockMinedThunkDeps = {
