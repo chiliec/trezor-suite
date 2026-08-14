@@ -2,7 +2,7 @@ import { BigNumber } from '@trezor/utils';
 
 import { expect, test } from '../../support/fixtures';
 
-const sendAmount = '0.0004';
+const sendAmount = '0.0008';
 const customFee = '10';
 
 test.describe('Trading - Swap fees Bitcoin', { tag: ['@T3T1', '@T3W1'] }, () => {

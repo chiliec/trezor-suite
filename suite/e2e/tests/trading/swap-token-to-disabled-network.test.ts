@@ -4,6 +4,7 @@ import { asNetworkSymbol } from '@suite-common/wallet-config';
 import { expect, test } from '../../support/fixtures';
 
 const sendAmount = '9';
+const accountLabel = 'Stellar #1';
 
 test.describe(
     'Trading - Swap token to disabled network asset',
@@ -23,7 +24,9 @@ test.describe(
             await walletPage.openSwapTrading({ symbol: 'sol' });
         });
 
-        test('Show provider info for disabled network asset XLM', async ({ tradingPage }) => {
+        test('Show provider info for disabled network asset XLM and enable it', async ({
+            tradingPage,
+        }) => {
             await test.step('Fill in a Swap form with Stellar buy asset', async () => {
                 await tradingPage.fillSwapForm({
                     amount: sendAmount,
@@ -41,6 +44,13 @@ test.describe(
 
             await test.step('Verify provider info is visible in quotes', async () => {
                 await expect(tradingPage.quotes.selectedProvider).toBeVisible();
+            });
+
+            await test.step('Enable the Stellar network from the receive account picker', async () => {
+                await tradingPage.receiveAccount.selectAddSuiteReceiveAccount(0, 'xlm');
+                await expect(tradingPage.receiveAccount.selectedReceiveAccount).toContainText(
+                    accountLabel,
+                );
             });
         });
     },

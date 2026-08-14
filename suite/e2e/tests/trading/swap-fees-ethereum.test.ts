@@ -5,7 +5,7 @@ import { BigNumber } from '@trezor/utils';
 
 import { expect, test } from '../../support/fixtures';
 
-const sendAmount = '0.008';
+const sendAmount = '0.02';
 const formattedSendAmount = `${localizeNumber(sendAmount)} ETH`;
 const gasLimit = '26000';
 const maxFeePerGas = '2.67674454';

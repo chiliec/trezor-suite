@@ -1,6 +1,6 @@
 import { messages } from '@suite/intl';
 import { getCryptoId } from '@suite-common/trading';
-import { localizeNumber } from '@suite-common/wallet-utils';
+import { fromGwei, localizeNumber } from '@suite-common/wallet-utils';
 import { BigNumber } from '@trezor/utils';
 
 import { getCompanyNameFromList } from '../../fixtures/trading';
@@ -14,7 +14,6 @@ const usdcCryptoId = getCryptoId('eth', '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606e
 const dexProvider = getCompanyNameFromList('lifi', 'swapList');
 
 const gasLimitPattern = new RegExp(`^${messages.TR_GAS_LIMIT.defaultMessage}: (\\d+)$`);
-const plainTransferGasLimit = 21000;
 
 // A DEX swap broadcasts the swap itself, so there is no CONFIRMING deposit phase.
 const dexStatusFlow = swapStatusFlow.filter(phase => phase.status !== 'CONFIRMING');
@@ -70,16 +69,25 @@ test.describe('Trading - DEX swap (LI.FI)', { tag: ['@T3T1', '@T3W1'] }, () => {
                     networkFilter: 'eth',
                     assetCryptoId: usdcCryptoId,
                 },
-                selectReceiveAddress: async () => {
-                    await tradingPage.receiveAccount.selectSuiteReceiveAccount(0, 'eth');
-                },
             });
         });
+
+        let maxFeePerGas: string;
+        let feeRate: string;
+        let priorityFeeRate: string;
 
         await test.step('Select the LI.FI DEX offer', async () => {
             await tradingPage.quotes.chooseDifferentOfferIfAvailable(dexProvider);
             await expect(tradingPage.quotes.selectedProviderName).toHaveText(dexProvider);
             await tradingPage.quotes.waitForSync();
+
+            let maxFeePerGasRounded: string;
+            let maxPriorityFeePerGasRounded: string;
+            ({ maxFeePerGas, maxFeePerGasRounded, maxPriorityFeePerGasRounded } =
+                await tradingPage.fees.getStandardFeeWorkaround());
+            feeRate = `${maxFeePerGasRounded} Gwei`;
+            priorityFeeRate = `${maxPriorityFeePerGasRounded} Gwei`;
+
             const liveTradePromise = tradingMockNew.waitForLiveTrade();
             await tradingPage.swapBestOfferButton.click();
             await liveTradePromise;
@@ -175,23 +183,25 @@ test.describe('Trading - DEX swap (LI.FI)', { tag: ['@T3T1', '@T3W1'] }, () => {
             });
             await devicePrompt.waitForPromptAndConfirm();
 
-            // Gas limit and fee are live estimates; crosscheck Suite against the device.
+            await expect(devicePrompt.ethereumFeeRate).toHaveText(feeRate);
+            await expect(devicePrompt.ethereumPriorityFeeRate).toHaveText(priorityFeeRate);
+
             await expect(devicePrompt.ethereumGasLimit).toHaveText(gasLimitPattern);
             gasLimitWithLabel = await devicePrompt.ethereumGasLimit.innerText();
-            const gasLimitMatch = gasLimitWithLabel.match(gasLimitPattern);
-            if (!gasLimitMatch) {
+            const reviewedGasLimit = gasLimitWithLabel.match(gasLimitPattern)?.[1];
+            if (!reviewedGasLimit) {
                 throw new Error(`Unexpected gas limit format: ${gasLimitWithLabel}`);
             }
 
-            expect(Number(gasLimitMatch[1])).toBeGreaterThan(plainTransferGasLimit);
-
-            const dexMaximumFee = await devicePrompt.cryptoAmountWithSymbolOf('fee').innerText();
+            const maximumFeeInGwei = new BigNumber(maxFeePerGas).times(reviewedGasLimit).toFixed();
+            const maximumFee = `${localizeNumber(fromGwei(maximumFeeInGwei).toEther())} ETH`;
+            await expect(devicePrompt.cryptoAmountWithSymbolOf('fee')).toHaveText(maximumFee);
             await expect(device).toShowOnDisplay({
                 T3W1: {
                     header: { title: deviceReview.feeTitle },
                     body: [
                         [deviceReview.feeLabel],
-                        device.wrapText(dexMaximumFee, { isAmount: true }),
+                        device.wrapText(maximumFee, { isAmount: true }),
                     ],
                     actions: { right_button: deviceReview.signButton },
                 },
