@@ -44,6 +44,7 @@ describe('migration 26.8.0.2', () => {
         const migratedDb = await runMigration();
         const settings = await migratedDb.get('walletSettings', 'wallet');
 
+        // @ts-expect-error The field no longer exists in the schema (migrated again in 26.9.0).
         expect(settings?.hideSuspiciousTransactions).toEqual({ btc: true, eth: true, op: true });
 
         migratedDb.close();
@@ -58,6 +59,7 @@ describe('migration 26.8.0.2', () => {
         const migratedDb = await runMigration();
         const settings = await migratedDb.get('walletSettings', 'wallet');
 
+        // @ts-expect-error The field no longer exists in the schema (migrated again in 26.9.0).
         expect(settings?.hideSuspiciousTransactions).toEqual({});
 
         migratedDb.close();

@@ -9,12 +9,13 @@ export default createMigration<SuiteDBSchema>('26.8.0.2', async (_db, tx) => {
     if (!settings) return;
 
     // The stored value may still have the old shape, hence the widening cast.
-    const { hideSuspiciousTransactions } = settings as { hideSuspiciousTransactions: unknown };
+    const { hideSuspiciousTransactions } = settings as { hideSuspiciousTransactions?: unknown };
 
     if (typeof hideSuspiciousTransactions !== 'boolean') return;
 
     // The setting used to be a single boolean applied to all networks; it is now stored
     // per network. A stored `true` is preserved for all networks the user has enabled.
+    // @ts-expect-error The field no longer exists in the schema (migrated again in 26.9.0).
     settings.hideSuspiciousTransactions = hideSuspiciousTransactions
         ? Object.fromEntries(settings.enabledNetworks.map(symbol => [symbol, true]))
         : {};

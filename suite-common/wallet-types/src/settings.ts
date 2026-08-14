@@ -17,10 +17,14 @@ export const WalletType = {
 
 export type WalletType = (typeof WalletType)[keyof typeof WalletType];
 
+export type SuspiciousTransactionsFilter = 'showAll' | 'hideSuspicious' | 'showUnblurred';
+
 export interface WalletSettings {
     localCurrency: BaseCurrencyCode;
     enabledNetworks: NetworkSymbol[];
-    hideSuspiciousTransactions: Partial<Record<NetworkSymbol, boolean>>;
+    // Networks with the default 'showAll' value have no entry. 'showUnblurred' is
+    // session-only by design and is dropped when persisted settings are loaded.
+    suspiciousTransactionsFilter: Partial<Record<NetworkSymbol, SuspiciousTransactionsFilter>>;
     bitcoinAmountUnit: PROTO.AmountUnit;
     mevProtection: boolean;
     networkReserve: boolean;

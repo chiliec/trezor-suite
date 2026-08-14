@@ -416,8 +416,18 @@ export const extraDependencies: ExtraDependenciesStatic = {
                 state.drafts[d.key] = d.value;
             });
         },
-        storageLoadWalletSettings: (state: WalletSettingsState, { payload }: StorageLoadAction) =>
-            payload.walletSettings ? { ...state, ...payload.walletSettings } : state,
+        storageLoadWalletSettings: (state: WalletSettingsState, { payload }: StorageLoadAction) => {
+            if (!payload.walletSettings) return state;
+
+            // 'showUnblurred' is session-only by design, so it must not survive a restart.
+            const suspiciousTransactionsFilter = Object.fromEntries(
+                Object.entries(payload.walletSettings.suspiciousTransactionsFilter ?? {}).filter(
+                    ([, filter]) => filter !== 'showUnblurred',
+                ),
+            );
+
+            return { ...state, ...payload.walletSettings, suspiciousTransactionsFilter };
+        },
         // this is deprecated, bioAuth settings is now stored in electron store
         storageLoadBioAuth: (state: BioAuthState, { payload }: StorageLoadAction) => {
             if (!payload?.bioAuth) return state;

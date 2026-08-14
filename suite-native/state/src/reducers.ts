@@ -206,7 +206,7 @@ export const prepareRootReducers = (deps: PrepareRootReducersDeps) => {
         reducer: walletSettingsReducer,
         persistedKeys: walletSettingsPersistedWhitelist,
         key: 'walletSettings',
-        version: 4,
+        version: 5,
         migrations: {
             1: initialMigrateAppSettingsAndDiscoveryConfig({
                 mmkvStorage: deps.mmkvStorage,
@@ -235,6 +235,15 @@ export const prepareRootReducers = (deps: PrepareRootReducersDeps) => {
                 }
 
                 return oldState;
+            },
+            5: (oldState: any /* FIXME */) => {
+                if (!oldState) return oldState;
+
+                // hideSuspiciousTransactions was replaced by suspiciousTransactionsFilter.
+                // Mobile has no UI for the filter, so the stored record is just dropped.
+                const { hideSuspiciousTransactions: _, ...rest } = oldState;
+
+                return rest;
             },
         },
         storage: deps.mmkvStorage,
