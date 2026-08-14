@@ -1,6 +1,11 @@
 import { type ReactNode } from 'react';
 import { Pressable } from 'react-native';
+import { useDispatch, useSelector } from 'react-redux';
 
+import { useServices } from '@suite-common/dependency-injection';
+import { selectSelectedDevice } from '@suite-common/device';
+import { type Rating, buildUserFeedbackData, sendFeedbackAction } from '@suite-common/feedback';
+import { events, selectNativeAnalyticsDep } from '@suite-native/analytics';
 import {
     Box,
     Button,
@@ -12,7 +17,7 @@ import {
     TitleHeader,
     VStack,
 } from '@suite-native/atoms';
-import { FeedbackForm, type FeedbackFormState } from '@suite-native/feature-feedback';
+import { FeedbackCard } from '@suite-native/feedback-form';
 import { Translation, type TxKeyPath } from '@suite-native/intl';
 import { Screen } from '@suite-native/navigation';
 import { prepareNativeStyle, useNativeStyles } from '@trezor/styles-native';
@@ -38,7 +43,7 @@ type YieldCompleteScreenContentProps = {
     rows: YieldCompleteSummaryRow[];
     subtitle: ReactNode;
     title: ReactNode;
-    feedbackForm?: FeedbackFormState;
+    type: 'deposit' | 'withdraw' | 'claim' | 'wrap' | 'unwrap';
 };
 
 const contentStyle = prepareNativeStyle(utils => ({
@@ -73,9 +78,41 @@ export const YieldCompleteScreenContent = ({
     rows,
     subtitle,
     title,
-    feedbackForm,
+    type,
 }: YieldCompleteScreenContentProps) => {
     const { applyStyle } = useNativeStyles();
+    const { analytics } = useServices(selectNativeAnalyticsDep);
+    const device = useSelector(selectSelectedDevice);
+    const dispatch = useDispatch();
+
+    const onFeedbackRatingSelect = (rating: Rating) => {
+        analytics.report({
+            type: events.feedbackRatingSelectedEvent.name,
+            payload: { rating, category: 'yield', context: type },
+        });
+    };
+
+    const onFeedbackSubmit = (rating: Rating, description: string) => {
+        const userData = buildUserFeedbackData(device);
+
+        dispatch(
+            sendFeedbackAction({
+                type: 'SUGGESTION',
+                payload: {
+                    category: 'yield',
+                    feature: type,
+                    description,
+                    rating,
+                    ...userData,
+                },
+            }),
+        );
+
+        analytics.report({
+            type: events.feedbackSentEvent.name,
+            payload: { category: 'yield', context: type },
+        });
+    };
 
     return (
         <Screen
@@ -145,7 +182,16 @@ export const YieldCompleteScreenContent = ({
                     })}
                 </Card>
 
-                {!!feedbackForm && <FeedbackForm {...feedbackForm} />}
+                <FeedbackCard
+                    heading={<Translation id="feedbackForm.title" />}
+                    description={<Translation id="feedbackForm.description" />}
+                    submitLabel={<Translation id="feedbackForm.submitButton" />}
+                    successHeading={<Translation id="feedbackForm.successTitle" />}
+                    successDescription={<Translation id="feedbackForm.successDescription" />}
+                    closeLabel={<Translation id="generic.buttons.close" />}
+                    onSubmit={onFeedbackSubmit}
+                    onRatingSelect={onFeedbackRatingSelect}
+                />
             </VStack>
         </Screen>
     );
