@@ -1,0 +1,40 @@
+{
+    "model": "claude-opus-4-8",
+    "env": {
+        "MAX_THINKING_TOKENS": "128"
+    },
+    "permissions": {
+        "defaultMode": "auto",
+        "deny": [
+            "Read",
+            "Glob",
+            "Grep",
+            "Edit",
+            "Write",
+            "NotebookEdit",
+            "Bash",
+            "PowerShell",
+            "WebFetch",
+            "WebSearch",
+            "mcp__playwright__browser_close",
+            "mcp__playwright__browser_drop",
+            "mcp__playwright__browser_evaluate",
+            "mcp__playwright__browser_file_upload",
+            "mcp__playwright__browser_navigate_back",
+            "mcp__playwright__browser_run_code_unsafe"
+        ]
+    },
+    "hooks": {
+        "PreToolUse": [
+            {
+                "matcher": "mcp__playwright__browser_navigate|mcp__playwright__browser_tabs|mcp__playwright__browser_take_screenshot",
+                "hooks": [
+                    {
+                        "type": "command",
+                        "command": "node \"$CLAUDE_PROJECT_DIR/packages/e2e-utils/src/agenticE2eBot/hooks/sandboxGate.mjs\""
+                    }
+                ]
+            }
+        ]
+    }
+}
